@@ -1,2 +1,2 @@
 # websocket-quiz
-A multiplayer quiz web app used as stuffy for websocket connections
+A multiplayer quiz web app used as study for websocket connections
