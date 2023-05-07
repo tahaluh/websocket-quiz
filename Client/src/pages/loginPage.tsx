@@ -3,12 +3,12 @@ import { Helmet } from "react-helmet-async";
 import { useWebSocketContext } from "../contexts/useWebSocketContext";
 import { useAuthContext } from "../contexts/useUserContext";
 import { HOST_WS } from "../config-global";
-import { useEffect, useState } from "react";
-import { PATH_AUTH, PATH_GAME } from "../routes/paths";
+import { useState } from "react";
+import { PATH_GAME } from "../routes/paths";
 import { useNavigate } from "react-router-dom";
 
 export default function LoginPage() {
-  const { user, setUser, signed } = useAuthContext();
+  const { setUser } = useAuthContext();
   const { ws, setWs } = useWebSocketContext();
   const navigate = useNavigate();
 
@@ -24,7 +24,6 @@ export default function LoginPage() {
 
         if (response.method === "connect") {
           let responseUser = response.client;
-          console.log(responseUser);
 
           setUser(responseUser);
           const payLoad = {
@@ -37,7 +36,6 @@ export default function LoginPage() {
         }
 
         if (response.method === "selectUsername") {
-          console.log(response);
           let responseUser = response.client;
           setUser(responseUser);
           navigate(PATH_GAME.joinRoom);

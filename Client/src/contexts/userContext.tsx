@@ -7,8 +7,8 @@ import {
 } from "react";
 
 export type User = {
-  userId: string;
-  name: string;
+  id: string;
+  username: string;
 };
 
 export interface UserContextInterface {

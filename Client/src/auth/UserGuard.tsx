@@ -14,7 +14,6 @@ type UserGuardProps = {
 export default function UserGuard({ children }: UserGuardProps) {
   const { signed } = useAuthContext();
 
-  console.log(signed);
   if (!signed) {
     return <Navigate to={PATH_AUTH.login} />;
   }
