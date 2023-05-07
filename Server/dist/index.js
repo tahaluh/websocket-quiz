@@ -14,12 +14,12 @@ app.get("/", (req, res) => {
 app.listen(config_1.EXPRESS_PORT, () => {
     console.log(`now listening on port ${config_1.EXPRESS_PORT}`);
 });
-const httpServer = http_1.default.createServer();
-httpServer.listen(config_1.WSS_PORT, () => console.log("Listening.. on 9090"));
 // hashmap clients
 const clients = {};
 const games = {};
 // cria servidor webSocket
+const httpServer = http_1.default.createServer();
+httpServer.listen(config_1.WSS_PORT, () => console.log("Listening.. on 9090"));
 const wss = new websocket_1.server({
     httpServer: httpServer,
 });
@@ -37,24 +37,65 @@ wss.on("request", (request) => {
     connection.on("message", (message) => {
         if (message.type === "utf8") {
             const result = JSON.parse(message.utf8Data);
+            console.log(result);
             if (result.method === "selectUsername") {
-                console.log(result);
                 const clientId = result.clientId;
                 const username = result.username;
                 if (!clients[clientId])
                     return;
-                clients[clientId] = username;
+                clients[clientId].username = username;
                 const payLoad = {
                     method: "selectUsername",
                     client: { id: clientId, username: username },
                 };
                 connection.send(JSON.stringify(payLoad));
             }
+            // um usuario quer criar uma nova sala
+            if (result.method === "createRoom") {
+                const clientId = result.clientId;
+                const gameId = S4();
+                games[gameId] = {
+                    hostId: clientId,
+                    clients: [],
+                };
+                const payLoad = {
+                    method: "createRoom",
+                    game: Object.assign({ id: gameId }, games[gameId]),
+                };
+                connection.send(JSON.stringify(payLoad));
+            }
+            // um usuario quer entrar em uma sala
+            if (result.method === "joinRoom") {
+                let gameId = result.gameId;
+                let clientId = result.clientId;
+                let client = clients[clientId];
+                if (!games[gameId] || !client)
+                    return;
+                games[gameId].clients.push({
+                    id: client.id,
+                    username: client.username || "",
+                    points: 0,
+                });
+                const payLoad = {
+                    method: "joinRoom",
+                    game: Object.assign({ id: gameId }, games[gameId]),
+                };
+                connection.send(JSON.stringify(payLoad));
+                const generalPayLoad = {
+                    method: "joinedRoom",
+                    game: games[gameId],
+                };
+                // avisa pra todo mundo que alguem entrou
+                games[gameId].clients.forEach((c) => {
+                    var _a;
+                    (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(generalPayLoad));
+                });
+            }
         }
     });
     // gera um novo clientId
     const clientId = guid();
-    clients[clientId] = { connection: connection };
+    clients[clientId] = { connection: connection, id: clientId };
     console.log(Object.keys(clients).length);
     const payLoad = {
         method: "connect",
