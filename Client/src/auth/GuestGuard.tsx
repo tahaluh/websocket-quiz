@@ -1,9 +1,8 @@
-import { ReactNode, useContext } from 'react';
-import { Navigate } from 'react-router-dom';
+import { ReactNode, useContext } from "react";
+import { Navigate, Outlet } from "react-router-dom";
 // components
 //import LoadingScreen from '../components/loading-screen';
-import { useAuthContext } from '../contexts/useUserContext';
-
+import { useAuthContext } from "../contexts/useUserContext";
 
 // ----------------------------------------------------------------------
 
@@ -22,5 +21,11 @@ export default function GuestGuard({ children }: GuestGuardProps) {
     //return <LoadingScreen />;
   }
 
-  return <> {children} </>;
+  return (
+    <>
+      {" "}
+      {children}
+      <Outlet></Outlet>{" "}
+    </>
+  );
 }

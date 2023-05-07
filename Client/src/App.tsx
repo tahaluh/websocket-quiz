@@ -3,16 +3,19 @@ import Router from "./routes";
 import { BrowserRouter } from "react-router-dom";
 import UserProvider from "./contexts/userContext";
 import WebSocketProvider from "./contexts/webSocketContext";
+import { HelmetProvider } from "react-helmet-async";
 
 function App() {
   return (
-    <WebSocketProvider>
-      <UserProvider>
-        <BrowserRouter>
-          <Router></Router>
-        </BrowserRouter>
-      </UserProvider>
-    </WebSocketProvider>
+    <HelmetProvider>
+      <WebSocketProvider>
+        <UserProvider>
+          <BrowserRouter>
+            <Router />
+          </BrowserRouter>
+        </UserProvider>
+      </WebSocketProvider>
+    </HelmetProvider>
   );
 }
 

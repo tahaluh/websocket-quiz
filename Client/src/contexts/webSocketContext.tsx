@@ -4,8 +4,9 @@ import {
   Dispatch,
   SetStateAction,
   ReactNode,
+  useEffect,
 } from "react";
-import WebSocket from "ws";
+import { HOST_WS } from "../config-global";
 
 export interface WebSocketContextInterface {
   ws: WebSocket | undefined;

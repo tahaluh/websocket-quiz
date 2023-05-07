@@ -1,10 +1,7 @@
-import { Navigate, useRoutes } from "react-router-dom";
-import LoginPage from "../pages/loginPage";
-import JoinPage from "../pages/joinPage";
-import RoomPage from "../pages/roomPage";
-import GamePage from "../pages/gamePage";
-import UserGuard from "../auth/UserGuard";
+import { Navigate, Outlet, useRoutes } from "react-router-dom";
 import { PATH_AFTER_LOGIN } from "../config-global";
+import { GamePage, JoinPage, LoginPage, RoomPage } from "./elements";
+import UserGuard from "../auth/UserGuard";
 
 export default function Router() {
   return useRoutes([
@@ -14,7 +11,7 @@ export default function Router() {
     },
     {
       path: "/",
-      element: <UserGuard/>,
+      element: <UserGuard />,
       children: [
         { element: <Navigate to={PATH_AFTER_LOGIN} replace />, index: true },
         {

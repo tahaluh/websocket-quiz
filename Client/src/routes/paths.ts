@@ -11,3 +11,7 @@ const ROOTS_DASHBOARD = '/dashboard';
 export const PATH_AUTH = {
   login: '/login',
 };
+
+export const PATH_GAME = {
+  joinRoom: '/join',
+};

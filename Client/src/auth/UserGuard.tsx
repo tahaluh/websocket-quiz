@@ -1,5 +1,5 @@
 import { ReactNode, useContext } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 // components
 //import LoadingScreen from '../components/loading-screen';
 import { useAuthContext } from "../contexts/useUserContext";
@@ -14,13 +14,16 @@ type UserGuardProps = {
 export default function UserGuard({ children }: UserGuardProps) {
   const { signed } = useAuthContext();
 
+  console.log(signed);
   if (!signed) {
     return <Navigate to={PATH_AUTH.login} />;
   }
 
-  if (!signed) {
-    //return <LoadingScreen />;
-  }
-
-  return <> {children} </>;
+  return (
+    <>
+      {" "}
+      {children}
+      <Outlet></Outlet>
+    </>
+  );
 }
