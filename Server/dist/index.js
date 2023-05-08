@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -33,7 +42,7 @@ wss.on("request", (request) => {
     connection.on("close", (code, message) => {
         console.log(`Client disconnected. Reason: ${message}`);
     });
-    connection.on("message", (message) => {
+    connection.on("message", (message) => __awaiter(void 0, void 0, void 0, function* () {
         if (message.type === "utf8") {
             const result = JSON.parse(message.utf8Data);
             // o usuario informa seu username
@@ -62,7 +71,7 @@ wss.on("request", (request) => {
                 };
                 const payLoad = {
                     method: "createRoom",
-                    game: Object.assign({ id: gameId }, games[gameId]),
+                    gameId: gameId,
                 };
                 connection.send(JSON.stringify(payLoad));
                 return;
@@ -77,6 +86,7 @@ wss.on("request", (request) => {
                     return;
                 games[gameId].clients.push({
                     id: client.id,
+                    host: client.id === games[gameId].hostId,
                     username: client.username || "",
                     points: [],
                 });
@@ -84,19 +94,21 @@ wss.on("request", (request) => {
                 clients[clientId].gameId = gameId;
                 const payLoad = {
                     method: "joinRoom",
-                    game: Object.assign({ id: gameId }, games[gameId]),
+                    gameId: gameId,
                 };
-                // retorna ao player que a sala foi criada
+                // retorna ao player que ele entrou na sala
                 connection.send(JSON.stringify(payLoad));
                 const generalPayLoad = {
                     method: "joinedRoom",
-                    game: games[gameId],
+                    clients: games[gameId].clients,
                 };
-                // avisa pra todo mundo que alguem entrou
-                games[gameId].clients.forEach((c) => {
-                    var _a;
-                    (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(generalPayLoad));
-                });
+                setTimeout(() => {
+                    // avisa pra todo mundo que alguem entrou
+                    games[gameId].clients.forEach((c) => {
+                        var _a;
+                        (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(generalPayLoad));
+                    });
+                }, 1000);
                 return;
             }
             // o host inicia a partida
@@ -193,7 +205,7 @@ wss.on("request", (request) => {
                 return;
             }
         }
-    });
+    }));
     // gera um novo clientId
     const clientId = guid();
     clients[clientId] = { connection: connection, id: clientId };

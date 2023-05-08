@@ -30,6 +30,7 @@ interface game {
 
 interface gameClient {
   id: string;
+  host: boolean;
   username: string;
   points: number[];
 }
@@ -61,7 +62,7 @@ wss.on("request", (request) => {
     console.log(`Client disconnected. Reason: ${message}`);
   });
 
-  connection.on("message", (message) => {
+  connection.on("message", async (message) => {
     if (message.type === "utf8") {
       const result = JSON.parse(message.utf8Data);
 
@@ -96,7 +97,7 @@ wss.on("request", (request) => {
 
         const payLoad = {
           method: "createRoom",
-          game: { id: gameId, ...games[gameId] },
+          gameId: gameId,
         };
 
         connection.send(JSON.stringify(payLoad));
@@ -114,6 +115,7 @@ wss.on("request", (request) => {
 
         games[gameId].clients.push({
           id: client.id,
+          host: client.id === games[gameId].hostId,
           username: client.username || "",
           points: [],
         });
@@ -123,21 +125,24 @@ wss.on("request", (request) => {
 
         const payLoad = {
           method: "joinRoom",
-          game: { id: gameId, ...games[gameId] },
+          gameId: gameId,
         };
 
-        // retorna ao player que a sala foi criada
+        // retorna ao player que ele entrou na sala
         connection.send(JSON.stringify(payLoad));
 
         const generalPayLoad = {
           method: "joinedRoom",
-          game: games[gameId],
+          clients: games[gameId].clients,
         };
 
-        // avisa pra todo mundo que alguem entrou
-        games[gameId].clients.forEach((c) => {
-          clients[c.id].connection?.send(JSON.stringify(generalPayLoad));
-        });
+        setTimeout(() => {
+          // avisa pra todo mundo que alguem entrou
+          games[gameId].clients.forEach((c) => {
+            clients[c.id].connection?.send(JSON.stringify(generalPayLoad));
+          });
+        }, 1000);
+
         return;
       }
 
