@@ -15,6 +15,7 @@ interface client {
   connection?: connection;
   id: string;
   username?: string;
+  gameId?: string;
 }
 interface clientsInterface {
   [name: string]: client;
@@ -23,12 +24,14 @@ interface game {
   id?: string;
   hostId?: string;
   clients: gameClient[];
+  state: "onLobby" | "onGame" | "empty";
+  round: number;
 }
 
 interface gameClient {
   id: string;
   username: string;
-  points: number;
+  points: number[];
 }
 interface gamesInterface {
   [name: string]: game;
@@ -56,14 +59,13 @@ wss.on("request", (request) => {
 
   connection.on("close", (code: number, message: string) => {
     console.log(`Client disconnected. Reason: ${message}`);
-    console.log("\n\n");
   });
 
   connection.on("message", (message) => {
     if (message.type === "utf8") {
       const result = JSON.parse(message.utf8Data);
-      console.log(result);
 
+      // o usuario informa seu username
       if (result.method === "selectUsername") {
         const clientId = result.clientId;
         const username = result.username;
@@ -77,6 +79,7 @@ wss.on("request", (request) => {
         };
 
         connection.send(JSON.stringify(payLoad));
+        return;
       }
 
       // um usuario quer criar uma nova sala
@@ -87,6 +90,8 @@ wss.on("request", (request) => {
         games[gameId] = {
           hostId: clientId,
           clients: [],
+          state: "onLobby",
+          round: 0,
         };
 
         const payLoad = {
@@ -95,6 +100,7 @@ wss.on("request", (request) => {
         };
 
         connection.send(JSON.stringify(payLoad));
+        return;
       }
 
       // um usuario quer entrar em uma sala
@@ -103,18 +109,24 @@ wss.on("request", (request) => {
         let clientId = result.clientId;
         let client = clients[clientId];
 
+        // verifica se o jogador e a sala existem
         if (!games[gameId] || !client) return;
+
         games[gameId].clients.push({
           id: client.id,
           username: client.username || "",
-          points: 0,
+          points: [],
         });
+
+        // adicionar o id do jogador na entidade client
+        clients[clientId].gameId = gameId;
 
         const payLoad = {
           method: "joinRoom",
           game: { id: gameId, ...games[gameId] },
         };
 
+        // retorna ao player que a sala foi criada
         connection.send(JSON.stringify(payLoad));
 
         const generalPayLoad = {
@@ -126,6 +138,116 @@ wss.on("request", (request) => {
         games[gameId].clients.forEach((c) => {
           clients[c.id].connection?.send(JSON.stringify(generalPayLoad));
         });
+        return;
+      }
+
+      // o host inicia a partida
+      if (result.method === "startGame") {
+        let gameId = result.gameId;
+        let clientId = result.clientId;
+
+        // verifica se o requerente e o host
+        if (games[gameId].hostId != clientId) return;
+
+        // inicia o jogo
+        games[gameId].state = "onGame";
+        games[gameId].round = 1;
+
+        const payLoad = {
+          method: "startGame",
+          game: games[gameId],
+        };
+
+        // avisa pra todo mundo que o status do jogo mudou
+        games[gameId].clients.forEach((c) => {
+          clients[c.id].connection?.send(JSON.stringify(payLoad));
+        });
+        return;
+      }
+
+      // o host avalia as respostas
+      if (result.method === "quizGameFeedback") {
+        const clientId = result.clientId;
+        const answererId = result.answererId;
+        const correct = result.correct;
+        const gameId = result.gameId;
+        const quizGame = games[gameId];
+        const round = quizGame.round;
+
+        // verifica se o requerente e o host
+        if (games[gameId].hostId != clientId) return;
+
+        const answererIndex = games[gameId].clients.findIndex(
+          (client) => client.id === answererId
+        );
+
+        if (answererIndex === -1) return;
+
+        games[gameId].clients[answererIndex].points[round - 1] = correct
+          ? 1
+          : -1;
+
+        const payLoad = {
+          method: "quizGameFeedback",
+          clients: games[gameId].clients,
+        };
+
+        // avisa pra todo mundo que o status do jogo mudou
+        games[gameId].clients.forEach((c) => {
+          clients[c.id].connection?.send(JSON.stringify(payLoad));
+        });
+        return;
+      }
+
+      // o host inicia o proximo round
+      if (result.method === "nextRound") {
+        const clientId = result.clientId;
+        const gameId = result.gameId;
+
+        // verifica se o requerente e o host
+        if (games[gameId].hostId != clientId) return;
+
+        // aumenta um numero no round
+        games[gameId].round += 1;
+
+        const payLoad = {
+          method: "nextRound",
+          game: games[gameId],
+        };
+
+        // avisa pra todo mundo que o status do jogo mudou
+        games[gameId].clients.forEach((c) => {
+          clients[c.id].connection?.send(JSON.stringify(payLoad));
+        });
+        return;
+      }
+
+      // o host finaliza o jogo
+      if (result.method === "finishGame") {
+        const clientId = result.clientId;
+        const gameId = result.gameId;
+
+        // verifica se o requerente e o host
+        if (games[gameId].hostId != clientId) return;
+
+        // aumenta um numero no round
+        games[gameId].state = "onLobby";
+        games[gameId].round = 0;
+        games[gameId].clients = games[gameId].clients.map((client) => {
+          return { ...client, points: [] };
+        });
+
+        const payLoad = {
+          method: "finishGame",
+          game: games[gameId],
+        };
+
+        // avisa pra todo mundo que o status do jogo mudou
+        games[gameId].clients.forEach((c) => {
+          clients[c.id].connection?.send(JSON.stringify(payLoad));
+        });
+
+        return;
       }
     }
   });
