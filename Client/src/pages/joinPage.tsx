@@ -30,7 +30,7 @@ export default function JoinPage() {
       const response = JSON.parse(message.data);
       
       if (response.method === "joinRoom") {
-        let gameId = response.game.id;
+        let gameId = response.gameId;
         navigate(PATH_GAME.roomLobby(gameId));
       }
     };
@@ -49,9 +49,9 @@ export default function JoinPage() {
       const response = JSON.parse(message.data);
 
       if (response.method === "createRoom") {
-        let game = response.game;
+        let gameId = response.gameId;
 
-        handleJoinRoom(game.id);
+        handleJoinRoom(gameId);
       }
     };
   };
