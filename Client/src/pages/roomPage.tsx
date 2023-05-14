@@ -92,8 +92,8 @@ export default function RoomPage() {
         setGame((prev) => {
           return {
             ...prev,
-            round: 1,
-            state: "onGame",
+            round: 0,
+            state: "onInterval",
           };
         });
         console.log("o jogo começou");

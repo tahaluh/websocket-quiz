@@ -45,7 +45,7 @@ export default function GameProvider({ children }: GameProviderProps) {
   };
 
   return (
-    <GameContext.Provider value={{ game, setGame, inGame: !!game, reset }}>
+    <GameContext.Provider value={{ game, setGame, inGame: !!game.id, reset }}>
       {children}
     </GameContext.Provider>
   );

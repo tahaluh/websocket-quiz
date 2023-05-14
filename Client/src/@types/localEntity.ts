@@ -1,7 +1,9 @@
 export interface Player {
   username: string;
   host: boolean;
+  id: string;
   points: number[];
+  answer: string;
 }
 
 export interface JoinedRoomMessage {
@@ -26,6 +28,19 @@ export interface StartingGameMessage {
 export interface StartGameMessage {
   method: "startGame";
 }
+
+export interface NextRoundMessage {
+  method: "nextRound";
+}
+
+export interface ConfirmAnswerQuizGame {
+  method: "confirmAnswerQuizGame";
+}
+export interface AnswerQuizGame {
+  method: "answerQuizGame";
+  asnwer: string;
+  clientIndex: number;
+}
 export interface QuizGameConfig {
   gameMode: "quizGame";
   rounds: number;
@@ -35,7 +50,13 @@ export interface Game {
   id?: string;
   hostId: string;
   clients: Player[];
-  state: "onLobby" | "onGame" | "starting" | "empty";
+  state:
+    | "onLobby"
+    | "onRound"
+    | "onRoundFeedback"
+    | "onInterval"
+    | "starting"
+    | "empty";
   configs: QuizGameConfig;
   round: number;
 }
