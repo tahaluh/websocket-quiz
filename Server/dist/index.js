@@ -69,6 +69,11 @@ wss.on("request", (request) => {
                     hostId: clientId,
                     clients: [],
                     state: "onLobby",
+                    configs: {
+                        gameMode: "quizGame",
+                        rounds: 3,
+                        answerTime: 5,
+                    },
                     round: 0,
                 };
                 const payLoad = {
@@ -103,9 +108,6 @@ wss.on("request", (request) => {
                     method: "delayJoinRoom",
                     game: filterGame(games[gameId]),
                 };
-                console.log("\n\n");
-                console.log(delayedPayLoad.game);
-                console.log("\n\n");
                 setTimeout(() => {
                     connection.send(JSON.stringify(delayedPayLoad));
                 }, 500);
@@ -121,6 +123,28 @@ wss.on("request", (request) => {
                         (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(generalPayLoad));
                     });
                 }, 500);
+                return;
+            }
+            // o host muda as configuracoes do jogo
+            if (result.method === "changeConfig") {
+                let gameId = result.gameId;
+                let clientId = result.clientId;
+                // verifica se o requerente e o host
+                if (games[gameId].hostId != clientId)
+                    return;
+                let config = result.configs;
+                games[gameId].configs = Object.assign(Object.assign({}, games[gameId].configs), config);
+                console.log(result.configs);
+                console.log(games[gameId]);
+                const payLoad = {
+                    method: "changeConfig",
+                    configs: games[gameId].configs,
+                };
+                // avisa pra todo mundo que a config do jogo mudou
+                games[gameId].clients.forEach((c) => {
+                    var _a;
+                    (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(payLoad));
+                });
                 return;
             }
             // o host inicia a partida
@@ -223,7 +247,6 @@ wss.on("request", (request) => {
     // gera um novo clientId
     const clientId = guid();
     clients[clientId] = { connection: connection, id: clientId };
-    console.log(Object.keys(clients).length);
     const payLoad = {
         method: "connect",
         client: { id: clientId, username: (_a = clients[clientId]) === null || _a === void 0 ? void 0 : _a.username },
@@ -235,7 +258,6 @@ console.log("Listening.. on 9090");
 const filterGame = (game) => {
     var _a;
     let filteredGame = Object.assign(Object.assign({}, game), { hostId: (_a = game.hostId) === null || _a === void 0 ? void 0 : _a.slice(0, 4), clients: filterClients(game.clients, game.hostId) });
-    console.log(filteredGame);
     return filteredGame;
 };
 const filterClients = (clients, hostId) => {

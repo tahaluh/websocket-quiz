@@ -10,6 +10,13 @@ app.get("/", (req: Request, res: Response) => {
 app.listen(EXPRESS_PORT, () => {
   console.log(`now listening on port ${EXPRESS_PORT}`);
 });
+interface clientsInterface {
+  [name: string]: client;
+}
+
+interface gamesInterface {
+  [name: string]: game;
+}
 
 interface client {
   connection?: connection;
@@ -17,15 +24,19 @@ interface client {
   username?: string;
   gameId?: string;
 }
-interface clientsInterface {
-  [name: string]: client;
-}
 interface game {
   id: string;
   hostId: string;
   clients: gameClient[];
   state: "onLobby" | "onGame" | "empty";
+  configs: quizGameConfig;
   round: number;
+}
+
+interface quizGameConfig {
+  gameMode: "quizGame";
+  rounds: number;
+  answerTime: number;
 }
 
 interface gameClient {
@@ -33,15 +44,13 @@ interface gameClient {
   username: string;
   points: number[];
 }
-interface gamesInterface {
-  [name: string]: game;
-}
 
 interface filteredGame {
   id: string;
   hostId: string;
   clients: filteredGameClient[];
   state: "onLobby" | "onGame" | "empty";
+  configs: quizGameConfig;
   round: number;
 }
 interface filteredGameClient {
@@ -107,6 +116,11 @@ wss.on("request", (request) => {
           hostId: clientId,
           clients: [],
           state: "onLobby",
+          configs: {
+            gameMode: "quizGame",
+            rounds: 3,
+            answerTime: 5,
+          },
           round: 0,
         };
 
@@ -150,10 +164,6 @@ wss.on("request", (request) => {
           game: filterGame(games[gameId]),
         };
 
-        console.log("\n\n");
-        console.log(delayedPayLoad.game);
-        console.log("\n\n");
-
         setTimeout(() => {
           connection.send(JSON.stringify(delayedPayLoad));
         }, 500);
@@ -171,6 +181,32 @@ wss.on("request", (request) => {
           });
         }, 500);
 
+        return;
+      }
+
+      // o host muda as configuracoes do jogo
+      if (result.method === "changeConfig") {
+        let gameId = result.gameId;
+        let clientId = result.clientId;
+
+        // verifica se o requerente e o host
+        if (games[gameId].hostId != clientId) return;
+
+        let config = result.configs;
+        games[gameId].configs = { ...games[gameId].configs, ...config };
+
+        console.log(result.configs);
+        console.log(games[gameId]);
+
+        const payLoad = {
+          method: "changeConfig",
+          configs: games[gameId].configs,
+        };
+
+        // avisa pra todo mundo que a config do jogo mudou
+        games[gameId].clients.forEach((c) => {
+          clients[c.id].connection?.send(JSON.stringify(payLoad));
+        });
         return;
       }
 
@@ -290,8 +326,6 @@ wss.on("request", (request) => {
   const clientId = guid();
   clients[clientId] = { connection: connection, id: clientId };
 
-  console.log(Object.keys(clients).length);
-
   const payLoad = {
     method: "connect",
     client: { id: clientId, username: clients[clientId]?.username },
@@ -310,8 +344,6 @@ const filterGame = (game: game): filteredGame => {
     hostId: game.hostId?.slice(0, 4),
     clients: filterClients(game.clients, game.hostId),
   };
-
-  console.log(filteredGame);
 
   return filteredGame;
 };
