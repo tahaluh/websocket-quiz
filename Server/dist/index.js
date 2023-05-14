@@ -194,7 +194,16 @@ wss.on("request", (request) => {
                     var _a;
                     (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(payLoad));
                 });
-                console.log(payLoad);
+                const finishRoundPayload = {
+                    method: "finishRound",
+                };
+                setTimeout(() => {
+                    games[gameId].state = "onRoundFeedback";
+                    games[gameId].clients.forEach((c) => {
+                        var _a;
+                        (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(finishRoundPayload));
+                    });
+                }, games[gameId].configs.answerTime * 1000);
                 return;
             }
             // um player envia sua resposta
@@ -209,10 +218,6 @@ wss.on("request", (request) => {
                 const answererIndex = games[gameId].clients.findIndex((player) => player.id === client.id);
                 games[gameId].clients[answererIndex].asnwers[games[gameId].round - 1] =
                     answer; // salva a resposta do player na entidade do jogo
-                const answerResponsePayLoad = {
-                    method: "confirmAnswerQuizGame",
-                };
-                connection.send(JSON.stringify(answerResponsePayLoad));
                 // avisa pra todo mundo que o status do jogo mudou
                 const generalPayLoad = {
                     method: "answerQuizGame",
@@ -221,8 +226,6 @@ wss.on("request", (request) => {
                 };
                 games[gameId].clients.forEach((c) => {
                     var _a;
-                    if (c.id === client.id)
-                        return;
                     (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(generalPayLoad));
                 });
                 return;

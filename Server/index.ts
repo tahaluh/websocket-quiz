@@ -276,7 +276,18 @@ wss.on("request", (request) => {
         games[gameId].clients.forEach((c) => {
           clients[c.id].connection?.send(JSON.stringify(payLoad));
         });
-        console.log(payLoad);
+
+        const finishRoundPayload = {
+          method: "finishRound",
+        };
+
+        setTimeout(() => {
+          games[gameId].state = "onRoundFeedback";
+          games[gameId].clients.forEach((c) => {
+            clients[c.id].connection?.send(JSON.stringify(finishRoundPayload));
+          });
+        }, games[gameId].configs.answerTime * 1000);
+
         return;
       }
 
@@ -298,11 +309,6 @@ wss.on("request", (request) => {
         games[gameId].clients[answererIndex].asnwers[games[gameId].round - 1] =
           answer; // salva a resposta do player na entidade do jogo
 
-        const answerResponsePayLoad = {
-          method: "confirmAnswerQuizGame",
-        };
-        connection.send(JSON.stringify(answerResponsePayLoad));
-
         // avisa pra todo mundo que o status do jogo mudou
         const generalPayLoad = {
           method: "answerQuizGame",
@@ -310,7 +316,6 @@ wss.on("request", (request) => {
           clientIndex: answererIndex,
         };
         games[gameId].clients.forEach((c) => {
-          if (c.id === client.id) return;
           clients[c.id].connection?.send(JSON.stringify(generalPayLoad));
         });
 
