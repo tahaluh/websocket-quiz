@@ -301,7 +301,7 @@ wss.on("request", (request) => {
         const answerResponsePayLoad = {
           method: "confirmAnswerQuizGame",
         };
-        connection.send(answerResponsePayLoad);
+        connection.send(JSON.stringify(answerResponsePayLoad));
 
         // avisa pra todo mundo que o status do jogo mudou
         const generalPayLoad = {
