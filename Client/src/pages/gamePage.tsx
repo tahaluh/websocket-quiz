@@ -12,15 +12,24 @@ import { useAuthContext } from "../contexts/useUserContext";
 import { useGameContext } from "../contexts/useGameContext";
 import { useEffect, useState } from "react";
 import {
-  AnswerQuizGame,
-  ConfirmAnswerQuizGame,
+  AnswerQuizGameMessage,
+  FinishRoundMessage,
   NextRoundMessage,
 } from "../@types/localEntity";
+
+interface answerCard {
+  username: string;
+  width: string;
+  height: string;
+  color: string;
+  rotation: string;
+}
 
 export default function GamePage() {
   const { ws } = useWebSocketContext();
   const { user } = useAuthContext();
   const { game, setGame } = useGameContext();
+  const [answersCards, setAnswersCards] = useState<answerCard[]>([]);
 
   const [answer, setAnswer] = useState<string>("");
 
@@ -31,8 +40,8 @@ export default function GamePage() {
     ws.onmessage = (message) => {
       const response:
         | NextRoundMessage
-        | ConfirmAnswerQuizGame
-        | AnswerQuizGame = JSON.parse(message.data);
+        | AnswerQuizGameMessage
+        | FinishRoundMessage = JSON.parse(message.data);
       if (response.method === "nextRound") {
         setGame((prev) => {
           return {
@@ -44,20 +53,35 @@ export default function GamePage() {
         setCounter(game.configs.answerTime * 10);
       } else if (response.method === "answerQuizGame") {
         const clientIndex = response.clientIndex;
-        const clientAnswer = response.answer;
 
         setGame((prev) => {
           const tempClients = prev.clients;
-
-          tempClients[clientIndex] = {
-            ...tempClients[clientIndex],
-            answer: clientAnswer,
-          };
+          tempClients[clientIndex].answers[game.round] = "\n";
+          console.log(!!tempClients[clientIndex].answers[game.round]);
 
           return {
             ...prev,
             clients: tempClients,
           };
+        });
+
+        [1, 2, 3, 4, 5, 1, 2, 3, 4, 5].forEach(() => {
+          setAnswersCards((prev) => {
+            return [
+              ...prev,
+              {
+                username: game.clients[clientIndex].username,
+                width: `${Math.floor(Math.random() * 76)}vw`,
+                height: `${Math.floor(Math.random() * 56) + 22.5}vh`,
+                rotation: `${Math.floor(Math.random() * 180) - 90}deg`,
+                color: "#" + Math.floor(Math.random() * 16777215).toString(16),
+              },
+            ];
+          });
+        });
+      } else if (response.method === "finishRound") {
+        setGame((prev) => {
+          return { ...prev, state: "onRoundFeedback" };
         });
       }
     };
@@ -101,7 +125,10 @@ export default function GamePage() {
   useEffect(() => {
     if (counter > game.configs.answerTime * 10) {
       setCounter(game.configs.answerTime * 10);
-    } else if (counter >= 0 && game.state === "onRound")
+    } else if (
+      (counter >= 0 && game.state === "onRound") ||
+      game.state === "onRoundFeedback"
+    )
       counter > 0 && setTimeout(() => setCounter((prev) => prev - 1), 100);
   }, [counter]);
 
@@ -217,115 +244,152 @@ export default function GamePage() {
         gap={14}
         minHeight="90vh"
       >
-        {game.state === "onRoundFeedback" ||
-          (game.state === "onInterval" && ( // caso o jogo não esteja em round
-            <>
-              <Grid // lista de jogadores
-                container
-                flexDirection="column"
-                justifyContent="center"
-                alignItems="center"
-                spacing={4}
-              >
-                <Grid item xs={8} md={5} justifyContent="center">
-                  <Typography>Lista de Jogadores:</Typography>
-                </Grid>
-                <Grid item container xs={8} md={4} direction="column">
-                  {game.clients.map((player, index) => {
-                    return (
-                      <Grid
-                        item
-                        container
-                        alignItems="center"
-                        key={index}
-                        padding={1}
-                        border={1}
-                        borderTop={!index ? 1 : 0}
-                      >
-                        <Grid>
-                          <Typography display="inline">
-                            {player.username}{" "}
-                          </Typography>
-                        </Grid>
-                        <Grid>
-                          {player.host ? (
-                            <Iconify
-                              icon="ph:crown-simple-fill"
-                              width="24px"
-                              color="gold"
-                            />
-                          ) : (
-                            ""
-                          )}
-                        </Grid>
-                        <Grid>
-                          <Typography display="inline">
-                            :{" "}
-                            {player.points.reduce(
-                              (partialSum, a) => partialSum + a,
-                              0
-                            ) || 0}
-                          </Typography>
-                          {!!game.round && (
-                            <Typography
-                              display="inline"
-                              color={
-                                player.points[game.round] === 1
-                                  ? "success"
-                                  : "error"
-                              }
-                            >{` ${
-                              player.points[game.round - 1] || ""
-                            }`}</Typography>
-                          )}
-                        </Grid>
-                      </Grid>
-                    );
-                  })}
-                </Grid>
-              </Grid>
-
-              <Grid // Botão de próximo round
-                item
-                container
-                xs={8}
-                md={6}
-                lg={4}
-                xl={3}
-                alignItems="center"
-              >
-                <Button
-                  fullWidth
-                  size="large"
-                  variant={
-                    game.hostId === user?.id.slice(0, 4)
-                      ? "contained"
-                      : "outlined"
-                  }
-                  color="success"
-                  onClick={handleNextRound}
-                  disabled={!(game.hostId === user?.id.slice(0, 4))}
+        {game.state === "onRoundFeedback" && ( // map respostas de jogadores
+          <Grid container position="absolute">
+            {answersCards.map((asnwerCard) => {
+              return (
+                <Grid
+                  justifyContent="center"
+                  alignItems="center"
+                  position="fixed"
+                  left={asnwerCard.width}
+                  top={asnwerCard.height}
+                  sx={{
+                    backgroundColor: asnwerCard.color,
+                    rotate: asnwerCard.rotation,
+                  }}
                 >
-                  {game.hostId === user?.id.slice(0, 4) ? (
-                    game.state === "onInterval" ? (
-                      "Iniciar Round"
-                    ) : (
-                      "Próximo Round"
-                    )
-                  ) : (
-                    <>
-                      {"Aguarde pelo host... "}
-                      <Iconify
-                        icon="ph:crown-simple-fill"
-                        width="24px"
-                        color="gold"
-                      />
-                    </>
-                  )}
-                </Button>
+                  <Grid
+                    item
+                    xs={12}
+                    minWidth={"25vw"}
+                    justifyContent="center"
+                    position="relative"
+                    sx={{
+                      textAlign: "center",
+                    }}
+                  >
+                    <Typography
+                      variant="overline"
+                      display="inline"
+                      width="100%"
+                    >
+                      {asnwerCard.username}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              );
+            })}
+          </Grid>
+        )}
+        {game.state === "onInterval" && ( // caso o jogo não esteja em round
+          <>
+            <Grid // lista de jogadores
+              container
+              flexDirection="column"
+              justifyContent="center"
+              alignItems="center"
+              spacing={4}
+            >
+              <Grid item xs={8} md={5} justifyContent="center">
+                <Typography>Lista de Jogadores:</Typography>
               </Grid>
-            </>
-          ))}
+              <Grid item container xs={8} md={4} direction="column">
+                {game.clients.map((player, index) => {
+                  return (
+                    <Grid
+                      item
+                      container
+                      alignItems="center"
+                      key={index}
+                      padding={1}
+                      border={1}
+                      borderTop={!index ? 1 : 0}
+                    >
+                      <Grid>
+                        <Typography display="inline">
+                          {player.username}{" "}
+                        </Typography>
+                      </Grid>
+                      <Grid>
+                        {player.host ? (
+                          <Iconify
+                            icon="ph:crown-simple-fill"
+                            width="24px"
+                            color="gold"
+                          />
+                        ) : (
+                          ""
+                        )}
+                      </Grid>
+                      <Grid>
+                        <Typography display="inline">
+                          :{" "}
+                          {player.points.reduce(
+                            (partialSum, a) => partialSum + a,
+                            0
+                          ) || 0}
+                        </Typography>
+                        {!!game.round && (
+                          <Typography
+                            display="inline"
+                            color={
+                              player.points[game.round] === 1
+                                ? "success"
+                                : "error"
+                            }
+                          >{` ${
+                            player.points[game.round - 1] || ""
+                          }`}</Typography>
+                        )}
+                      </Grid>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </Grid>
+
+            <Grid // Botão de próximo round
+              item
+              container
+              xs={8}
+              md={6}
+              lg={4}
+              xl={3}
+              alignItems="center"
+            >
+              <Button
+                fullWidth
+                size="large"
+                variant={
+                  game.hostId === user?.id.slice(0, 4)
+                    ? "contained"
+                    : "outlined"
+                }
+                color="success"
+                onClick={handleNextRound}
+                disabled={!(game.hostId === user?.id.slice(0, 4))}
+              >
+                {game.hostId === user?.id.slice(0, 4) ? (
+                  game.state === "onInterval" ? (
+                    "Iniciar Round"
+                  ) : (
+                    "Próximo Round"
+                  )
+                ) : (
+                  <>
+                    {"Aguarde pelo host... "}
+                    <Iconify
+                      icon="ph:crown-simple-fill"
+                      width="24px"
+                      color="gold"
+                    />
+                  </>
+                )}
+              </Button>
+            </Grid>
+          </>
+        )}
         {game.state === "onRound" && ( // caso o jogo esteja em round
           <>
             <Grid // Timer
@@ -342,7 +406,10 @@ export default function GamePage() {
               </Typography>
             </Grid>
             {!game.clients.some((player) => {
-              return player.id === user?.id.slice(0, 4) && player.answer;
+              return (
+                player.id === user?.id.slice(0, 4) &&
+                !!player.answers[game.round - 1]
+              );
             }) && (
               <Grid // Inserir resposta
                 item
