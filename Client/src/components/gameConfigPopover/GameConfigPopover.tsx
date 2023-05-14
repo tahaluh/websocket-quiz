@@ -30,11 +30,8 @@ export default function GameConfigPopover({ configs, host }: propsInterface) {
     null
   );
 
-  useEffect(() => {
-    reset(defaultValues);
-  }, [anchorEl]);
-
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    reset(defaultValues);
     setAnchorEl(event.currentTarget);
   };
 
@@ -48,8 +45,8 @@ export default function GameConfigPopover({ configs, host }: propsInterface) {
   // Create convenio
 
   const defaultValues = {
-    rounds: configs?.rounds | 3,
-    answerTime: configs?.answerTime | 5,
+    rounds: configs?.rounds ? configs.rounds : 3,
+    answerTime: configs?.answerTime ? configs?.answerTime : 5,
   };
 
   const methods = useForm<FormValuesProps>({
@@ -113,7 +110,7 @@ export default function GameConfigPopover({ configs, host }: propsInterface) {
               </IconButton>
             </Grid>
 
-            <Grid item xs={6} md={6}>
+            <Grid item xs={12} md={6}>
               <RHFTextField
                 fullWidth
                 name="rounds"
@@ -123,7 +120,7 @@ export default function GameConfigPopover({ configs, host }: propsInterface) {
                 {...(!host ? { value: configs.rounds, disabled: true } : {})}
               />
             </Grid>
-            <Grid item xs={6} md={6}>
+            <Grid item xs={12} md={6}>
               <RHFSlider
                 name="rounds"
                 min={1}
@@ -132,7 +129,7 @@ export default function GameConfigPopover({ configs, host }: propsInterface) {
               />
             </Grid>
 
-            <Grid item xs={6} md={6}>
+            <Grid item xs={12} md={6}>
               <RHFTextField
                 fullWidth
                 name="answerTime"
@@ -144,7 +141,7 @@ export default function GameConfigPopover({ configs, host }: propsInterface) {
                   : {})}
               />
             </Grid>
-            <Grid item xs={6} md={6}>
+            <Grid item xs={12} md={6}>
               <RHFSlider
                 name="answerTime"
                 min={3}
@@ -155,18 +152,20 @@ export default function GameConfigPopover({ configs, host }: propsInterface) {
               />
             </Grid>
 
-            <Grid item xs={12} md={12}>
-              <Button
-                fullWidth
-                size="large"
-                variant="outlined"
-                color="success"
-                aria-describedby={id}
-                type="submit"
-              >
-                Salvar
-              </Button>
-            </Grid>
+            {host && (
+              <Grid item xs={12} md={12}>
+                <Button
+                  fullWidth
+                  size="large"
+                  variant="outlined"
+                  color="success"
+                  aria-describedby={id}
+                  type="submit"
+                >
+                  Salvar
+                </Button>
+              </Grid>
+            )}
           </Grid>
         </FormProvider>
       </Popover>

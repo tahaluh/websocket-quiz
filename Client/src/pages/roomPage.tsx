@@ -2,14 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { useParams } from "react-router-dom";
 import { useWebSocketContext } from "../contexts/useWebSocketContext";
 import { useEffect, useState } from "react";
-import {
-  Button,
-  Grid,
-  IconButton,
-  MenuItem,
-  Select,
-  Typography,
-} from "@mui/material";
+import { Button, Grid, MenuItem, Select, Typography } from "@mui/material";
 import Iconify from "../components/iconify";
 import {
   ChangeConfigsRoomMessage,
@@ -20,11 +13,14 @@ import {
 } from "../@types/localEntity";
 import { useAuthContext } from "../contexts/useUserContext";
 import GameConfigPopover from "../components/gameConfigPopover/GameConfigPopover";
+import { useSnackbar } from "notistack";
 
 export default function RoomPage() {
   const { id } = useParams();
   const { ws } = useWebSocketContext();
   const { user } = useAuthContext();
+
+  const { enqueueSnackbar } = useSnackbar();
 
   const [game, setGame] = useState<Game>({
     id: id,
@@ -42,6 +38,7 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (!ws) return;
+
     ws.onmessage = (message) => {
       const response:
         | JoinedRoomMessage
@@ -60,7 +57,13 @@ export default function RoomPage() {
 
       if (response.method === "delayJoinRoom") {
         const tempGame = response.game;
-        setGame(tempGame);
+        setGame((prev) => {
+          return {
+            ...prev,
+            ...tempGame,
+            hostId: tempGame.hostId,
+          };
+        });
       }
 
       if (response.method === "changeConfig") {
@@ -71,9 +74,12 @@ export default function RoomPage() {
             configs: configs,
           };
         });
+        if (game.hostId === user?.id.slice(0, 4)) {
+          enqueueSnackbar("Configurações alteradas com sucesso!");
+        }
       }
     };
-  }, []);
+  }, [game.hostId === user?.id.slice(0, 4)]);
 
   const handleStartGame = () => {};
 

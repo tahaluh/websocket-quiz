@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import UserProvider from "./contexts/userContext";
 import WebSocketProvider from "./contexts/webSocketContext";
 import { HelmetProvider } from "react-helmet-async";
+import { SnackbarProvider } from "notistack";
 
 function App() {
   return (
@@ -11,7 +12,9 @@ function App() {
       <WebSocketProvider>
         <UserProvider>
           <BrowserRouter>
-            <Router />
+            <SnackbarProvider>
+              <Router />
+            </SnackbarProvider>
           </BrowserRouter>
         </UserProvider>
       </WebSocketProvider>
