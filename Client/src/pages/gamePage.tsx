@@ -341,12 +341,9 @@ export default function GamePage() {
                 {counter ? `${Math.ceil(counter / 10)}...` : "Zero!"}
               </Typography>
             </Grid>
-            {game.clients.findIndex(
-              // se nao ha reesposta com id do localPlayer
-              (player) => {
-                return player.id === user?.id.slice(0, 4);
-              }
-            ) !== -1 && (
+            {!game.clients.some((player) => {
+              return player.id === user?.id.slice(0, 4) && player.answer;
+            }) && (
               <Grid // Inserir resposta
                 item
                 container
