@@ -28,7 +28,7 @@ interface game {
   id: string;
   hostId: string;
   clients: gameClient[];
-  state: "onLobby" | "onGame" | "empty";
+  state: "onLobby" | "onGame" | "starting" | "empty";
   configs: quizGameConfig;
   round: number;
 }
@@ -49,7 +49,7 @@ interface filteredGame {
   id: string;
   hostId: string;
   clients: filteredGameClient[];
-  state: "onLobby" | "onGame" | "empty";
+  state: "onLobby" | "onGame" | "starting" | "empty";
   configs: quizGameConfig;
   round: number;
 }
@@ -192,11 +192,8 @@ wss.on("request", (request) => {
         // verifica se o requerente e o host
         if (games[gameId].hostId != clientId) return;
 
-        let config = result.configs;
-        games[gameId].configs = { ...games[gameId].configs, ...config };
-
-        console.log(result.configs);
-        console.log(games[gameId]);
+        let configs = result.configs;
+        games[gameId].configs = { ...games[gameId].configs, ...configs };
 
         const payLoad = {
           method: "changeConfig",
@@ -219,19 +216,29 @@ wss.on("request", (request) => {
         if (games[gameId].hostId != clientId) return;
 
         // inicia o jogo
-        games[gameId].state = "onGame";
-        games[gameId].round = 1;
+        games[gameId].state = "starting";
+        games[gameId].round = 0;
+
+        const startingPayLoad = {
+          method: "startingGame",
+        };
+
+        // avisa pra todo mundo que o jogo esta começando
+        games[gameId].clients.forEach((c) => {
+          clients[c.id].connection?.send(JSON.stringify(startingPayLoad));
+        });
 
         const payLoad = {
           method: "startGame",
-          game: filterGame(games[gameId]),
         };
 
-        // avisa pra todo mundo que o status do jogo mudou
-        games[gameId].clients.forEach((c) => {
-          if (c.id == clientId) return;
-          clients[c.id].connection?.send(JSON.stringify(payLoad));
-        });
+        // avisa pra todo mundo que o jogo iniciou
+        setTimeout(() => {
+          games[gameId].clients.forEach((c) => {
+            clients[c.id].connection?.send(JSON.stringify(payLoad));
+          });
+        }, 6 * 1000);
+
         return;
       }
 

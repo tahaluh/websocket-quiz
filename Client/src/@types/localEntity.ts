@@ -19,10 +19,13 @@ export interface ChangeConfigsRoomMessage {
   configs: QuizGameConfig;
 }
 
+export interface StartingGameMessage {
+  method: "startingGame";
+}
+
 export interface StartGameMessage {
   method: "startGame";
 }
-
 export interface QuizGameConfig {
   gameMode: "quizGame";
   rounds: number;
@@ -32,7 +35,7 @@ export interface Game {
   id?: string;
   hostId: string;
   clients: Player[];
-  state: "onLobby" | "onGame" | "empty";
+  state: "onLobby" | "onGame" | "starting" | "empty";
   configs: QuizGameConfig;
   round: number;
 }

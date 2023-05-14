@@ -2,15 +2,23 @@ import { Helmet } from "react-helmet-async";
 import { useNavigate, useParams } from "react-router-dom";
 import { useWebSocketContext } from "../contexts/useWebSocketContext";
 import { useEffect, useState } from "react";
-import { Button, Grid, MenuItem, Select, Typography } from "@mui/material";
+import {
+  Backdrop,
+  Button,
+  CircularProgress,
+  Grid,
+  MenuItem,
+  Select,
+  Typography,
+} from "@mui/material";
 import Iconify from "../components/iconify";
 import {
   ChangeConfigsRoomMessage,
   DelayJoinRoomMessage,
   Game,
   JoinedRoomMessage,
-  Player,
   StartGameMessage,
+  StartingGameMessage,
 } from "../@types/localEntity";
 import { useAuthContext } from "../contexts/useUserContext";
 import GameConfigPopover from "../components/gameConfigPopover/GameConfigPopover";
@@ -47,7 +55,8 @@ export default function RoomPage() {
         | JoinedRoomMessage
         | DelayJoinRoomMessage
         | ChangeConfigsRoomMessage
-        | StartGameMessage = JSON.parse(message.data);
+        | StartGameMessage
+        | StartingGameMessage = JSON.parse(message.data);
 
       if (response.method === "joinedRoom") {
         const clients = response.clients;
@@ -57,9 +66,7 @@ export default function RoomPage() {
             clients: clients,
           };
         });
-      }
-
-      if (response.method === "delayJoinRoom") {
+      } else if (response.method === "delayJoinRoom") {
         const tempGame = response.game;
         setGame((prev) => {
           return {
@@ -68,9 +75,7 @@ export default function RoomPage() {
             hostId: tempGame.hostId,
           };
         });
-      }
-
-      if (response.method === "changeConfig") {
+      } else if (response.method === "changeConfig") {
         const configs = response.configs;
         setGame((prev) => {
           return {
@@ -81,9 +86,15 @@ export default function RoomPage() {
         if (game.hostId === user?.id.slice(0, 4)) {
           enqueueSnackbar("Configurações alteradas com sucesso!");
         }
-      }
-
-      if (response.method === "startGame") {
+      } else if (response.method === "startingGame") {
+        setGame((prev) => {
+          return {
+            ...prev,
+            state: "starting",
+          };
+        });
+        setCounter(5);
+      } else if (response.method === "startGame") {
         setGame((prev) => {
           return {
             ...prev,
@@ -109,11 +120,28 @@ export default function RoomPage() {
     ws.send(JSON.stringify(payLoad));
   };
 
+  // counter
+
+  const [counter, setCounter] = useState(0);
+
+  useEffect(() => {
+    if (game.state === "starting")
+      counter > 0 && setTimeout(() => setCounter(counter - 1), 1000);
+  }, [counter]);
+
   return (
     <>
       <Helmet>
         <title> Sala </title>
       </Helmet>
+      <Backdrop
+        sx={{ color: "#fff", zIndex: 9 }}
+        open={game.state === "starting"}
+      >
+        <Typography variant="h1" fontFamily="cursive" color="white">
+          {counter ? `${counter}...` : "Start!"}
+        </Typography>
+      </Backdrop>
       <Grid
         container
         flexDirection="column"
@@ -209,11 +237,25 @@ export default function RoomPage() {
           <Button
             fullWidth
             size="large"
-            variant="contained"
+            variant={
+              game.hostId === user?.id.slice(0, 4) ? "contained" : "outlined"
+            }
             color="success"
             onClick={handleStartGame}
+            disabled={!(game.hostId === user?.id.slice(0, 4))}
           >
-            Iniciar Partida
+            {game.hostId === user?.id.slice(0, 4) ? (
+              "Iniciar Partida"
+            ) : (
+              <>
+                {"Aguarde pelo host... "}
+                <Iconify
+                  icon="ph:crown-simple-fill"
+                  width="24px"
+                  color="gold"
+                />
+              </>
+            )}
           </Button>
         </Grid>
       </Grid>

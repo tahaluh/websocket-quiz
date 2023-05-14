@@ -101,10 +101,10 @@ export default function GameConfigPopover({ configs, host }: propsInterface) {
             padding={4}
             width="40vw"
           >
-            <Grid item xs={11}>
+            <Grid item xs={10}>
               <Typography variant="overline">Regras do jogo</Typography>
             </Grid>
-            <Grid item xs={1}>
+            <Grid item xs={2}>
               <IconButton onClick={handleClose}>
                 <Iconify icon="material-symbols:close" width="30px" />
               </IconButton>

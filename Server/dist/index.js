@@ -132,10 +132,8 @@ wss.on("request", (request) => {
                 // verifica se o requerente e o host
                 if (games[gameId].hostId != clientId)
                     return;
-                let config = result.configs;
-                games[gameId].configs = Object.assign(Object.assign({}, games[gameId].configs), config);
-                console.log(result.configs);
-                console.log(games[gameId]);
+                let configs = result.configs;
+                games[gameId].configs = Object.assign(Object.assign({}, games[gameId].configs), configs);
                 const payLoad = {
                     method: "changeConfig",
                     configs: games[gameId].configs,
@@ -155,19 +153,26 @@ wss.on("request", (request) => {
                 if (games[gameId].hostId != clientId)
                     return;
                 // inicia o jogo
-                games[gameId].state = "onGame";
-                games[gameId].round = 1;
-                const payLoad = {
-                    method: "startGame",
-                    game: filterGame(games[gameId]),
+                games[gameId].state = "starting";
+                games[gameId].round = 0;
+                const startingPayLoad = {
+                    method: "startingGame",
                 };
-                // avisa pra todo mundo que o status do jogo mudou
+                // avisa pra todo mundo que o jogo esta começando
                 games[gameId].clients.forEach((c) => {
                     var _a;
-                    if (c.id == clientId)
-                        return;
-                    (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(payLoad));
+                    (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(startingPayLoad));
                 });
+                const payLoad = {
+                    method: "startGame",
+                };
+                // avisa pra todo mundo que o jogo iniciou
+                setTimeout(() => {
+                    games[gameId].clients.forEach((c) => {
+                        var _a;
+                        (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(payLoad));
+                    });
+                }, 6 * 1000);
                 return;
             }
             // o host avalia as respostas
