@@ -96,7 +96,6 @@ export default function RoomPage() {
             state: "onInterval",
           };
         });
-        console.log("o jogo começou");
         navigate(PATH_GAME.gameRoom(id || ""));
       }
     };

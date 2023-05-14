@@ -38,7 +38,7 @@ export interface ConfirmAnswerQuizGame {
 }
 export interface AnswerQuizGame {
   method: "answerQuizGame";
-  asnwer: string;
+  answer: string;
   clientIndex: number;
 }
 export interface QuizGameConfig {

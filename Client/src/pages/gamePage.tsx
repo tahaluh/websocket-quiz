@@ -33,7 +33,6 @@ export default function GamePage() {
         | NextRoundMessage
         | ConfirmAnswerQuizGame
         | AnswerQuizGame = JSON.parse(message.data);
-
       if (response.method === "nextRound") {
         setGame((prev) => {
           return {
@@ -43,26 +42,9 @@ export default function GamePage() {
           };
         });
         setCounter(game.configs.answerTime * 10);
-      } else if (response.method === "confirmAnswerQuizGame") {
-        setGame((prev) => {
-          const tempClients = prev.clients;
-          const localClientIndex = tempClients.findIndex(
-            (client) => client.id === user?.id.slice(0, 4)
-          );
-
-          tempClients[localClientIndex] = {
-            ...tempClients[localClientIndex],
-            answer: answer,
-          };
-
-          return {
-            ...prev,
-            clients: tempClients,
-          };
-        });
       } else if (response.method === "answerQuizGame") {
         const clientIndex = response.clientIndex;
-        const clientAnswer = response.asnwer;
+        const clientAnswer = response.answer;
 
         setGame((prev) => {
           const tempClients = prev.clients;
@@ -107,6 +89,10 @@ export default function GamePage() {
 
     ws.send(JSON.stringify(payLoad));
   };
+
+  useEffect(() => {
+    console.log(game.clients);
+  }, [game]);
 
   // counter
 
@@ -355,40 +341,46 @@ export default function GamePage() {
                 {counter ? `${Math.ceil(counter / 10)}...` : "Zero!"}
               </Typography>
             </Grid>
-            <Grid // Inserir resposta
-              item
-              container
-              xs={12}
-              md={8}
-              xl={5}
-              alignItems="center"
-              justifyContent="center"
-              gap={3}
-            >
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  label="Resposta"
-                  placeholder="Insira sua resposta..."
-                  onChange={(e) => {
-                    setAnswer(e.target.value);
-                  }}
-                />
+            {game.clients.findIndex(
+              // se nao ha reesposta com id do localPlayer
+              (player) => {
+                return player.id === user?.id.slice(0, 4);
+              }
+            ) !== -1 && (
+              <Grid // Inserir resposta
+                item
+                container
+                xs={12}
+                md={8}
+                xl={5}
+                alignItems="center"
+                justifyContent="center"
+                gap={3}
+              >
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    label="Resposta"
+                    placeholder="Insira sua resposta..."
+                    onChange={(e) => {
+                      setAnswer(e.target.value);
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={9}>
+                  <Button
+                    fullWidth
+                    size="large"
+                    variant="contained"
+                    color="success"
+                    onClick={handleAnswerRound}
+                  >
+                    Enviar resposta
+                  </Button>
+                </Grid>
               </Grid>
-              <Grid item xs={9}>
-                <Button
-                  fullWidth
-                  size="large"
-                  variant="contained"
-                  color="success"
-                  onClick={handleAnswerRound}
-                  disabled={!(game.hostId === user?.id.slice(0, 4))}
-                >
-                  Enviar resposta
-                </Button>
-              </Grid>
-            </Grid>
+            )}
           </>
         )}
       </Grid>
