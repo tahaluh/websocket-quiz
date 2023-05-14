@@ -265,7 +265,7 @@ wss.on("request", (request) => {
 
         // aumenta um numero no round
         games[gameId].round += 1;
-        console.log(result);
+        games[gameId].state = "onRound";
 
         const payLoad = {
           method: "nextRound",
@@ -286,7 +286,7 @@ wss.on("request", (request) => {
           games[gameId].clients.forEach((c) => {
             clients[c.id].connection?.send(JSON.stringify(finishRoundPayload));
           });
-        }, games[gameId].configs.answerTime * 1000);
+        }, (games[gameId].configs.answerTime + 1) * 1000);
 
         return;
       }
@@ -297,10 +297,9 @@ wss.on("request", (request) => {
         const gameId = result.gameId;
         const answer = result.answer;
 
-        console.log(result);
-
-        // verifica se o jogador e a sala existem
-        if (!games[gameId] || !client) return;
+        // verifica se o jogador e a sala existem e se o modo de jogo está aceitando respostas
+        if (!games[gameId] || !client || games[gameId].state != "onRound")
+          return;
 
         const answererIndex = games[gameId].clients.findIndex(
           (player) => player.id === client.id
@@ -421,6 +420,7 @@ const filterClients = (
     id: client.id.slice(0, 4),
     username: client.username,
     points: client.points,
+    answers: client.asnwers,
   }));
 };
 
