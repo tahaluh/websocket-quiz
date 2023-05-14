@@ -24,28 +24,22 @@ import { useAuthContext } from "../contexts/useUserContext";
 import GameConfigPopover from "../components/gameConfigPopover/GameConfigPopover";
 import { useSnackbar } from "notistack";
 import { PATH_GAME } from "../routes/paths";
+import { useGameContext } from "../contexts/useGameContext";
 
 export default function RoomPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { ws } = useWebSocketContext();
   const { user } = useAuthContext();
+  const { game, setGame, reset } = useGameContext();
 
   const { enqueueSnackbar } = useSnackbar();
 
-  const [game, setGame] = useState<Game>({
-    id: id,
-    hostId: "",
-    clients: [],
-    state: "onLobby",
-    configs: {
-      gameMode: "quizGame",
-      answerTime: 5,
-      rounds: 3,
-    },
-    round: 0,
-  });
   const [gameMode, setGameMode] = useState<string>("quizGame");
+
+  useEffect(() => {
+    reset();
+  }, []);
 
   useEffect(() => {
     if (!ws) return;
@@ -151,22 +145,34 @@ export default function RoomPage() {
         minHeight="90vh"
       >
         <Grid
+          container
           item
-          xs={6}
-          md={4}
           justifySelf="flex-start"
           alignSelf="flex-start"
-          sx={{ position: "fixed", top: "10px" }}
+          alignItems="center"
+          sx={{
+            position: "fixed",
+            top: "10px",
+            cursor: "pointer",
+          }}
+          role="button"
+          onClick={() => {
+            navigator.clipboard.writeText(id || "");
+          }}
+          gap={1}
         >
-          <Typography
-            variant="caption"
-            fontSize={15}
-            onClick={() => {
-              navigator.clipboard.writeText(id || "");
-            }}
-          >
-            Código da sala: {id}
-          </Typography>
+          <Grid>
+            <Typography variant="caption" fontSize={15} display="inline">
+              Código da sala: {id}{" "}
+            </Typography>
+          </Grid>
+          <Grid>
+            <Iconify
+              icon="material-symbols:content-copy-outline"
+              width="24px"
+              color="grey"
+            />
+          </Grid>
         </Grid>
 
         <Grid

@@ -99,7 +99,6 @@ export default function GameConfigPopover({ configs, host }: propsInterface) {
             alignItems="center"
             spacing={2}
             padding={4}
-            width="40vw"
           >
             <Grid item xs={10}>
               <Typography variant="overline">Regras do jogo</Typography>

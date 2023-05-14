@@ -5,17 +5,20 @@ import UserProvider from "./contexts/userContext";
 import WebSocketProvider from "./contexts/webSocketContext";
 import { HelmetProvider } from "react-helmet-async";
 import { SnackbarProvider } from "notistack";
+import GameProvider from "./contexts/GameContext";
 
 function App() {
   return (
     <HelmetProvider>
       <WebSocketProvider>
         <UserProvider>
-          <BrowserRouter>
-            <SnackbarProvider>
-              <Router />
-            </SnackbarProvider>
-          </BrowserRouter>
+          <GameProvider>
+            <BrowserRouter>
+              <SnackbarProvider>
+                <Router />
+              </SnackbarProvider>
+            </BrowserRouter>
+          </GameProvider>
         </UserProvider>
       </WebSocketProvider>
     </HelmetProvider>
