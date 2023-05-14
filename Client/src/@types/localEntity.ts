@@ -19,6 +19,10 @@ export interface ChangeConfigsRoomMessage {
   configs: QuizGameConfig;
 }
 
+export interface StartGameMessage {
+  method: "startGame";
+}
+
 export interface QuizGameConfig {
   gameMode: "quizGame";
   rounds: number;

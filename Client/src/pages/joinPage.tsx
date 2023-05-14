@@ -16,8 +16,6 @@ export default function JoinPage() {
   const handleJoinRoom = (gameId: string) => {
     if (!ws) return;
 
-    console.log(roomCode);
-
     const payLoad = {
       method: "joinRoom",
       clientId: user ? user.id : "",

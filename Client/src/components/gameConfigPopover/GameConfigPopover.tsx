@@ -117,6 +117,9 @@ export default function GameConfigPopover({ configs, host }: propsInterface) {
                 type="number"
                 label="Rounds"
                 placeholder="insira a quantidade de rounds"
+                InputProps={{
+                  inputProps: { min: 1 },
+                }}
                 {...(!host ? { value: configs.rounds, disabled: true } : {})}
               />
             </Grid>
@@ -136,6 +139,9 @@ export default function GameConfigPopover({ configs, host }: propsInterface) {
                 type="number"
                 label="Tempo para responder"
                 placeholder="insira o tempo para responder..."
+                InputProps={{
+                  inputProps: { min: 3 },
+                }}
                 {...(!host
                   ? { value: configs.answerTime, disabled: true }
                   : {})}

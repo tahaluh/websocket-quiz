@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useWebSocketContext } from "../contexts/useWebSocketContext";
 import { useEffect, useState } from "react";
 import { Button, Grid, MenuItem, Select, Typography } from "@mui/material";
@@ -10,12 +10,15 @@ import {
   Game,
   JoinedRoomMessage,
   Player,
+  StartGameMessage,
 } from "../@types/localEntity";
 import { useAuthContext } from "../contexts/useUserContext";
 import GameConfigPopover from "../components/gameConfigPopover/GameConfigPopover";
 import { useSnackbar } from "notistack";
+import { PATH_GAME } from "../routes/paths";
 
 export default function RoomPage() {
+  const navigate = useNavigate();
   const { id } = useParams();
   const { ws } = useWebSocketContext();
   const { user } = useAuthContext();
@@ -43,7 +46,8 @@ export default function RoomPage() {
       const response:
         | JoinedRoomMessage
         | DelayJoinRoomMessage
-        | ChangeConfigsRoomMessage = JSON.parse(message.data);
+        | ChangeConfigsRoomMessage
+        | StartGameMessage = JSON.parse(message.data);
 
       if (response.method === "joinedRoom") {
         const clients = response.clients;
@@ -78,10 +82,32 @@ export default function RoomPage() {
           enqueueSnackbar("Configurações alteradas com sucesso!");
         }
       }
+
+      if (response.method === "startGame") {
+        setGame((prev) => {
+          return {
+            ...prev,
+            round: 1,
+            state: "onGame",
+          };
+        });
+        console.log("o jogo começou");
+        navigate(PATH_GAME.gameRoom(id || ""));
+      }
     };
   }, [game.hostId === user?.id.slice(0, 4)]);
 
-  const handleStartGame = () => {};
+  const handleStartGame = () => {
+    if (!ws) return;
+
+    const payLoad = {
+      method: "startGame",
+      clientId: user ? user.id : "",
+      gameId: id,
+    };
+
+    ws.send(JSON.stringify(payLoad));
+  };
 
   return (
     <>

@@ -15,4 +15,5 @@ export const PATH_AUTH = {
 export const PATH_GAME = {
   joinRoom: "/join",
   roomLobby: (id: string) => `/room/${id}`,
+  gameRoom: (id: string) => `/game/${id}`,
 };
