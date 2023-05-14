@@ -5,44 +5,56 @@ import { useEffect, useState } from "react";
 import {
   Button,
   Grid,
-  Icon,
   IconButton,
-  InputLabel,
   MenuItem,
-  OutlinedInput,
   Select,
   Typography,
 } from "@mui/material";
 import Iconify from "../components/iconify";
-
-interface player {
-  id: string;
-  username: string;
-  host: boolean;
-  points: number;
-}
-
-interface joinedRoomMessage {
-  method: string;
-  clients: player[];
-}
+import {
+  DelayJoinRoomMessage,
+  Game,
+  JoinedRoomMessage,
+  Player,
+} from "../@types/localEntity";
+import { useAuthContext } from "../contexts/useUserContext";
 
 export default function RoomPage() {
   const { id } = useParams();
   const { ws } = useWebSocketContext();
+  const { user } = useAuthContext();
 
-  const [players, setPlayers] = useState<player[]>([]);
-  const [game, setGame] = useState({});
+  const [game, setGame] = useState<Game>({
+    id: id,
+    hostId: "",
+    clients: [],
+    state: "onLobby",
+    round: 0,
+  });
   const [gameMode, setGameMode] = useState<string>("");
 
   useEffect(() => {
     if (!ws) return;
     ws.onmessage = (message) => {
-      const response: joinedRoomMessage = JSON.parse(message.data);
+      const response: JoinedRoomMessage | DelayJoinRoomMessage = JSON.parse(
+        message.data
+      );
 
       if (response.method === "joinedRoom") {
         const clients = response.clients;
-        setPlayers(clients);
+        setGame((prev) => {
+          return {
+            ...prev,
+            clients: clients,
+          };
+        });
+      }
+
+      if (response.method === "delayJoinRoom") {
+        const tempGame = response.game;
+        setGame(tempGame);
+
+        console.log(tempGame);
       }
     };
   }, []);
@@ -92,9 +104,9 @@ export default function RoomPage() {
             <Typography>Lista de Jogadores:</Typography>
           </Grid>
           <Grid item container xs={8} md={4} direction="column">
-            {players.map((player) => {
+            {game.clients.map((player, index) => {
               return (
-                <Grid item container alignItems="center">
+                <Grid item container alignItems="center" key={index}>
                   <Grid>
                     <Typography display="inline">{player.username} </Typography>
                   </Grid>
@@ -116,16 +128,25 @@ export default function RoomPage() {
         </Grid>
 
         <Grid item container xs={10} md={8} lg={5} alignItems="center">
-          <Grid xs={1.2} justifyItems="center">
+          <Grid item xs={1.2} justifyItems="center">
             <IconButton onClick={() => {}}>
               <Iconify icon="ph:gear" width="30px" />
             </IconButton>
           </Grid>
-          <Grid xs={10.8}>
+          <Grid item xs={10.8}>
+            <Button
+              onClick={() => {
+                console.log(game);
+                console.log(user?.id.slice(0, 4));
+              }}
+            >
+              Clica
+            </Button>
             <Select
               fullWidth
               displayEmpty
               variant="outlined"
+              disabled={!(game.hostId === user?.id.slice(0, 4))}
               value={gameMode}
               onChange={(e) => {
                 setGameMode(e.target.value);
