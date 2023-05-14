@@ -12,12 +12,14 @@ import {
 } from "@mui/material";
 import Iconify from "../components/iconify";
 import {
+  ChangeConfigsRoomMessage,
   DelayJoinRoomMessage,
   Game,
   JoinedRoomMessage,
   Player,
 } from "../@types/localEntity";
 import { useAuthContext } from "../contexts/useUserContext";
+import GameConfigPopover from "../components/gameConfigPopover/GameConfigPopover";
 
 export default function RoomPage() {
   const { id } = useParams();
@@ -29,16 +31,22 @@ export default function RoomPage() {
     hostId: "",
     clients: [],
     state: "onLobby",
+    configs: {
+      gameMode: "quizGame",
+      answerTime: 5,
+      rounds: 3,
+    },
     round: 0,
   });
-  const [gameMode, setGameMode] = useState<string>("");
+  const [gameMode, setGameMode] = useState<string>("quizGame");
 
   useEffect(() => {
     if (!ws) return;
     ws.onmessage = (message) => {
-      const response: JoinedRoomMessage | DelayJoinRoomMessage = JSON.parse(
-        message.data
-      );
+      const response:
+        | JoinedRoomMessage
+        | DelayJoinRoomMessage
+        | ChangeConfigsRoomMessage = JSON.parse(message.data);
 
       if (response.method === "joinedRoom") {
         const clients = response.clients;
@@ -53,8 +61,16 @@ export default function RoomPage() {
       if (response.method === "delayJoinRoom") {
         const tempGame = response.game;
         setGame(tempGame);
+      }
 
-        console.log(tempGame);
+      if (response.method === "changeConfig") {
+        const configs = response.configs;
+        setGame((prev) => {
+          return {
+            ...prev,
+            configs: configs,
+          };
+        });
       }
     };
   }, []);
@@ -129,25 +145,22 @@ export default function RoomPage() {
 
         <Grid item container xs={10} md={8} lg={5} alignItems="center">
           <Grid item xs={1.2} justifyItems="center">
-            <IconButton onClick={() => {}}>
-              <Iconify icon="ph:gear" width="30px" />
-            </IconButton>
+            <GameConfigPopover
+              configs={game.configs}
+              host={game.hostId === user?.id.slice(0, 4)}
+            />
           </Grid>
           <Grid item xs={10.8}>
-            <Button
-              onClick={() => {
-                console.log(game);
-                console.log(user?.id.slice(0, 4));
-              }}
-            >
-              Clica
-            </Button>
             <Select
               fullWidth
               displayEmpty
               variant="outlined"
               disabled={!(game.hostId === user?.id.slice(0, 4))}
-              value={gameMode}
+              value={
+                game.hostId === user?.id.slice(0, 4)
+                  ? gameMode
+                  : game.configs.gameMode
+              }
               onChange={(e) => {
                 setGameMode(e.target.value);
               }}
