@@ -94,6 +94,7 @@ wss.on("request", (request) => {
                     id: client.id,
                     username: client.username || "",
                     points: [],
+                    asnwers: [],
                 });
                 // adicionar o id do jogador na entidade client
                 clients[clientId].gameId = gameId;
@@ -154,7 +155,6 @@ wss.on("request", (request) => {
                     return;
                 // inicia o jogo
                 games[gameId].state = "starting";
-                games[gameId].round = 0;
                 const startingPayLoad = {
                     method: "startingGame",
                 };
@@ -172,7 +172,59 @@ wss.on("request", (request) => {
                         var _a;
                         (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(payLoad));
                     });
-                }, 6 * 1000);
+                }, 1 * 1000); // aaa
+                return;
+            }
+            // o host inicia o proximo round
+            if (result.method === "nextRound") {
+                const clientId = result.clientId;
+                const gameId = result.gameId;
+                // verifica se o requerente e o host
+                if (games[gameId].hostId != clientId)
+                    return;
+                // aumenta um numero no round
+                games[gameId].round += 1;
+                console.log(result);
+                const payLoad = {
+                    method: "nextRound",
+                    round: games[gameId].round,
+                };
+                // avisa pra todo mundo que o status do jogo mudou
+                games[gameId].clients.forEach((c) => {
+                    var _a;
+                    (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(payLoad));
+                });
+                console.log(payLoad);
+                return;
+            }
+            // um player envia sua resposta
+            if (result.method === "answerQuizGame") {
+                const client = clients[result.clientId];
+                const gameId = result.gameId;
+                const answer = result.answer;
+                console.log(result);
+                // verifica se o jogador e a sala existem
+                if (!games[gameId] || !client)
+                    return;
+                const answererIndex = games[gameId].clients.findIndex((player) => player.id === client.id);
+                games[gameId].clients[answererIndex].asnwers[games[gameId].round - 1] =
+                    answer; // salva a resposta do player na entidade do jogo
+                const answerResponsePayLoad = {
+                    method: "confirmAnswerQuizGame",
+                };
+                connection.send(answerResponsePayLoad);
+                // avisa pra todo mundo que o status do jogo mudou
+                const generalPayLoad = {
+                    method: "answerQuizGame",
+                    answer: answer,
+                    clientIndex: answererIndex,
+                };
+                games[gameId].clients.forEach((c) => {
+                    var _a;
+                    if (c.id === client.id)
+                        return;
+                    (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(generalPayLoad));
+                });
                 return;
             }
             // o host avalia as respostas
@@ -203,26 +255,6 @@ wss.on("request", (request) => {
                 });
                 return;
             }
-            // o host inicia o proximo round
-            if (result.method === "nextRound") {
-                const clientId = result.clientId;
-                const gameId = result.gameId;
-                // verifica se o requerente e o host
-                if (games[gameId].hostId != clientId)
-                    return;
-                // aumenta um numero no round
-                games[gameId].round += 1;
-                const payLoad = {
-                    method: "nextRound",
-                    game: filterGame(games[gameId]),
-                };
-                // avisa pra todo mundo que o status do jogo mudou
-                games[gameId].clients.forEach((c) => {
-                    var _a;
-                    (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(payLoad));
-                });
-                return;
-            }
             // o host finaliza o jogo
             if (result.method === "finishGame") {
                 const clientId = result.clientId;
@@ -230,7 +262,7 @@ wss.on("request", (request) => {
                 // verifica se o requerente e o host
                 if (games[gameId].hostId != clientId)
                     return;
-                // aumenta um numero no round
+                // reseta o state
                 games[gameId].state = "onLobby";
                 games[gameId].round = 0;
                 games[gameId].clients = games[gameId].clients.map((client) => {
@@ -268,6 +300,7 @@ const filterGame = (game) => {
 const filterClients = (clients, hostId) => {
     return clients.map((client) => ({
         host: client.id == hostId,
+        id: client.id.slice(0, 4),
         username: client.username,
         points: client.points,
     }));
