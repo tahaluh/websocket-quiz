@@ -21,8 +21,8 @@ interface clientsInterface {
   [name: string]: client;
 }
 interface game {
-  id?: string;
-  hostId?: string;
+  id: string;
+  hostId: string;
   clients: gameClient[];
   state: "onLobby" | "onGame" | "empty";
   round: number;
@@ -30,13 +30,27 @@ interface game {
 
 interface gameClient {
   id: string;
-  host: boolean;
   username: string;
   points: number[];
 }
 interface gamesInterface {
   [name: string]: game;
 }
+
+interface filteredGame {
+  id: string;
+  hostId: string;
+  clients: filteredGameClient[];
+  state: "onLobby" | "onGame" | "empty";
+  round: number;
+}
+interface filteredGameClient {
+  host: boolean;
+  username: string;
+  points: number[];
+}
+
+// request interfaces
 
 // hashmap clients
 const clients: clientsInterface = {};
@@ -89,6 +103,7 @@ wss.on("request", (request) => {
         const gameId = S4();
 
         games[gameId] = {
+          id: gameId,
           hostId: clientId,
           clients: [],
           state: "onLobby",
@@ -107,15 +122,13 @@ wss.on("request", (request) => {
       // um usuario quer entrar em uma sala
       if (result.method === "joinRoom") {
         let gameId = result.gameId;
-        let clientId = result.clientId;
-        let client = clients[clientId];
+        let client = clients[result.clientId];
 
         // verifica se o jogador e a sala existem
         if (!games[gameId] || !client) return;
 
         games[gameId].clients.push({
           id: client.id,
-          host: client.id === games[gameId].hostId,
           username: client.username || "",
           points: [],
         });
@@ -131,9 +144,24 @@ wss.on("request", (request) => {
         // retorna ao player que ele entrou na sala
         connection.send(JSON.stringify(payLoad));
 
+        // retorna o estado do jogo para o player que acabou de entrar (com um pequeno delay)
+        const delayedPayLoad = {
+          method: "delayJoinRoom",
+          game: filterGame(games[gameId]),
+        };
+
+        console.log("\n\n");
+        console.log(delayedPayLoad.game);
+        console.log("\n\n");
+
+        setTimeout(() => {
+          connection.send(JSON.stringify(delayedPayLoad));
+        }, 500);
+
+        // payload para todo mundo
         const generalPayLoad = {
           method: "joinedRoom",
-          clients: games[gameId].clients,
+          clients: filterClients(games[gameId].clients, games[gameId].hostId),
         };
 
         setTimeout(() => {
@@ -141,7 +169,7 @@ wss.on("request", (request) => {
           games[gameId].clients.forEach((c) => {
             clients[c.id].connection?.send(JSON.stringify(generalPayLoad));
           });
-        }, 1000);
+        }, 500);
 
         return;
       }
@@ -160,11 +188,12 @@ wss.on("request", (request) => {
 
         const payLoad = {
           method: "startGame",
-          game: games[gameId],
+          game: filterGame(games[gameId]),
         };
 
         // avisa pra todo mundo que o status do jogo mudou
         games[gameId].clients.forEach((c) => {
+          if (c.id == clientId) return;
           clients[c.id].connection?.send(JSON.stringify(payLoad));
         });
         return;
@@ -194,7 +223,7 @@ wss.on("request", (request) => {
 
         const payLoad = {
           method: "quizGameFeedback",
-          clients: games[gameId].clients,
+          clients: filterClients(games[gameId].clients, games[gameId].hostId),
         };
 
         // avisa pra todo mundo que o status do jogo mudou
@@ -217,7 +246,7 @@ wss.on("request", (request) => {
 
         const payLoad = {
           method: "nextRound",
-          game: games[gameId],
+          game: filterGame(games[gameId]),
         };
 
         // avisa pra todo mundo que o status do jogo mudou
@@ -244,7 +273,7 @@ wss.on("request", (request) => {
 
         const payLoad = {
           method: "finishGame",
-          game: games[gameId],
+          game: filterGame(games[gameId]),
         };
 
         // avisa pra todo mundo que o status do jogo mudou
@@ -272,6 +301,31 @@ wss.on("request", (request) => {
 });
 
 console.log("Listening.. on 9090");
+
+// retorna game filtrado
+
+const filterGame = (game: game): filteredGame => {
+  let filteredGame: filteredGame = {
+    ...game,
+    hostId: game.hostId?.slice(0, 4),
+    clients: filterClients(game.clients, game.hostId),
+  };
+
+  console.log(filteredGame);
+
+  return filteredGame;
+};
+
+const filterClients = (
+  clients: gameClient[],
+  hostId: string
+): filteredGameClient[] => {
+  return clients.map((client) => ({
+    host: client.id == hostId,
+    username: client.username,
+    points: client.points,
+  }));
+};
 
 // Gera id
 

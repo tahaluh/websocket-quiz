@@ -23,6 +23,7 @@ app.get("/", (req, res) => {
 app.listen(config_1.EXPRESS_PORT, () => {
     console.log(`now listening on port ${config_1.EXPRESS_PORT}`);
 });
+// request interfaces
 // hashmap clients
 const clients = {};
 const games = {};
@@ -64,6 +65,7 @@ wss.on("request", (request) => {
                 const clientId = result.clientId;
                 const gameId = S4();
                 games[gameId] = {
+                    id: gameId,
                     hostId: clientId,
                     clients: [],
                     state: "onLobby",
@@ -79,14 +81,12 @@ wss.on("request", (request) => {
             // um usuario quer entrar em uma sala
             if (result.method === "joinRoom") {
                 let gameId = result.gameId;
-                let clientId = result.clientId;
-                let client = clients[clientId];
+                let client = clients[result.clientId];
                 // verifica se o jogador e a sala existem
                 if (!games[gameId] || !client)
                     return;
                 games[gameId].clients.push({
                     id: client.id,
-                    host: client.id === games[gameId].hostId,
                     username: client.username || "",
                     points: [],
                 });
@@ -98,9 +98,21 @@ wss.on("request", (request) => {
                 };
                 // retorna ao player que ele entrou na sala
                 connection.send(JSON.stringify(payLoad));
+                // retorna o estado do jogo para o player que acabou de entrar (com um pequeno delay)
+                const delayedPayLoad = {
+                    method: "delayJoinRoom",
+                    game: filterGame(games[gameId]),
+                };
+                console.log("\n\n");
+                console.log(delayedPayLoad.game);
+                console.log("\n\n");
+                setTimeout(() => {
+                    connection.send(JSON.stringify(delayedPayLoad));
+                }, 500);
+                // payload para todo mundo
                 const generalPayLoad = {
                     method: "joinedRoom",
-                    clients: games[gameId].clients,
+                    clients: filterClients(games[gameId].clients, games[gameId].hostId),
                 };
                 setTimeout(() => {
                     // avisa pra todo mundo que alguem entrou
@@ -108,7 +120,7 @@ wss.on("request", (request) => {
                         var _a;
                         (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(generalPayLoad));
                     });
-                }, 1000);
+                }, 500);
                 return;
             }
             // o host inicia a partida
@@ -123,11 +135,13 @@ wss.on("request", (request) => {
                 games[gameId].round = 1;
                 const payLoad = {
                     method: "startGame",
-                    game: games[gameId],
+                    game: filterGame(games[gameId]),
                 };
                 // avisa pra todo mundo que o status do jogo mudou
                 games[gameId].clients.forEach((c) => {
                     var _a;
+                    if (c.id == clientId)
+                        return;
                     (_a = clients[c.id].connection) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(payLoad));
                 });
                 return;
@@ -151,7 +165,7 @@ wss.on("request", (request) => {
                     : -1;
                 const payLoad = {
                     method: "quizGameFeedback",
-                    clients: games[gameId].clients,
+                    clients: filterClients(games[gameId].clients, games[gameId].hostId),
                 };
                 // avisa pra todo mundo que o status do jogo mudou
                 games[gameId].clients.forEach((c) => {
@@ -171,7 +185,7 @@ wss.on("request", (request) => {
                 games[gameId].round += 1;
                 const payLoad = {
                     method: "nextRound",
-                    game: games[gameId],
+                    game: filterGame(games[gameId]),
                 };
                 // avisa pra todo mundo que o status do jogo mudou
                 games[gameId].clients.forEach((c) => {
@@ -195,7 +209,7 @@ wss.on("request", (request) => {
                 });
                 const payLoad = {
                     method: "finishGame",
-                    game: games[gameId],
+                    game: filterGame(games[gameId]),
                 };
                 // avisa pra todo mundo que o status do jogo mudou
                 games[gameId].clients.forEach((c) => {
@@ -217,6 +231,20 @@ wss.on("request", (request) => {
     connection.send(JSON.stringify(payLoad));
 });
 console.log("Listening.. on 9090");
+// retorna game filtrado
+const filterGame = (game) => {
+    var _a;
+    let filteredGame = Object.assign(Object.assign({}, game), { hostId: (_a = game.hostId) === null || _a === void 0 ? void 0 : _a.slice(0, 4), clients: filterClients(game.clients, game.hostId) });
+    console.log(filteredGame);
+    return filteredGame;
+};
+const filterClients = (clients, hostId) => {
+    return clients.map((client) => ({
+        host: client.id == hostId,
+        username: client.username,
+        points: client.points,
+    }));
+};
 // Gera id
 function S4() {
     return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
