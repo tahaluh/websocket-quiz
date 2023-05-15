@@ -71,7 +71,7 @@ export default function GamePage() {
               ...prev,
               {
                 username: game.clients[clientIndex].username,
-                width: `${Math.floor(Math.random() * 76)}vw`,
+                width: `${Math.floor(Math.random() * 81)}vw`,
                 height: `${Math.floor(Math.random() * 56) + 22.5}vh`,
                 rotation: `${Math.floor(Math.random() * 180) - 90}deg`,
                 color: "#" + Math.floor(Math.random() * 16777215).toString(16),
@@ -254,17 +254,20 @@ export default function GamePage() {
                   position="fixed"
                   left={asnwerCard.width}
                   top={asnwerCard.height}
+                  minWidth={"20vw"}
+                  minHeight={"10vh"}
+                  flexDirection="row"
+                  border={2}
                   sx={{
-                    backgroundColor: asnwerCard.color,
+                    backgroundColor: 'rgba(256,256,256,0.95)',
                     rotate: asnwerCard.rotation,
                   }}
                 >
                   <Grid
                     item
-                    xs={12}
-                    minWidth={"25vw"}
-                    justifyContent="center"
                     position="relative"
+                    top={7.5}
+                    xs={12}
                     sx={{
                       textAlign: "center",
                     }}
@@ -273,9 +276,36 @@ export default function GamePage() {
                       variant="overline"
                       display="inline"
                       width="100%"
+                      fontSize={20}
                     >
                       {asnwerCard.username}
                     </Typography>
+                  </Grid>
+                  <Grid
+                    position="absolute"
+                    top={1}
+                    right={1}
+                    minHeight="100%"
+                    item
+                    xs={1}
+                    justifyContent="space-between"
+                  >
+                    <Iconify
+                      icon="fluent-mdl2:like-solid"
+                      width="24px"
+                      color="green"
+                      position="fixed"
+                      top={7}
+                      right={7}
+                    />
+                    <Iconify
+                      icon="fluent-mdl2:dislike-solid"
+                      width="24px"
+                      color="red"
+                      position="fixed"
+                      bottom={7}
+                      right={7}
+                    />
                   </Grid>
                 </Grid>
               );
