@@ -305,6 +305,14 @@ wss.on("request", (request) => {
           (player) => player.id === client.id
         );
 
+        if (
+          !!games[gameId].clients[answererIndex].asnwers[
+            games[gameId].round - 1
+          ]
+        ) {
+          return;
+        }
+
         games[gameId].clients[answererIndex].asnwers[games[gameId].round - 1] =
           answer; // salva a resposta do player na entidade do jogo
 
@@ -314,6 +322,41 @@ wss.on("request", (request) => {
           answer: answer,
           clientIndex: answererIndex,
         };
+        games[gameId].clients.forEach((c) => {
+          clients[c.id].connection?.send(JSON.stringify(generalPayLoad));
+        });
+
+        return;
+      }
+
+      // o host revela uma das respostas
+      if (result.method === "revealAnswer") {
+        const clientId = result.clientId;
+        const gameId = result.gameId;
+        const asnwererId = result.asnwererId;
+
+        // verifica se o requerente e o host e o jogo esta na fase de feedback
+        if (
+          !games[gameId] ||
+          games[gameId].hostId != clientId ||
+          games[gameId].state != "onRoundFeedback"
+        )
+          return;
+
+        const answererIndex = games[gameId].clients.findIndex(
+          (player) => player.id.slice(0, 4) === asnwererId
+        );
+
+        const answer =
+          games[gameId].clients[answererIndex].asnwers[games[gameId].round - 1];
+
+        // retorna a resposta pra todo mundo
+        const generalPayLoad = {
+          method: "revealAnswer",
+          answer: answer,
+          clientIndex: answererIndex,
+        };
+
         games[gameId].clients.forEach((c) => {
           clients[c.id].connection?.send(JSON.stringify(generalPayLoad));
         });
