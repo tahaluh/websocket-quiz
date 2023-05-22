@@ -1,5 +1,6 @@
 import {
   Button,
+  ButtonBase,
   CircularProgress,
   Grid,
   TextField,
@@ -15,15 +16,10 @@ import {
   AnswerQuizGameMessage,
   FinishRoundMessage,
   NextRoundMessage,
+  answerCard,
 } from "../@types/localEntity";
-
-interface answerCard {
-  username: string;
-  width: string;
-  height: string;
-  color: string;
-  rotation: string;
-}
+import animations from "../animations/animations";
+import PlayerAnswerCard from "../components/playerAnswerCard/playerAnswerCard";
 
 export default function GamePage() {
   const { ws } = useWebSocketContext();
@@ -57,27 +53,23 @@ export default function GamePage() {
         setGame((prev) => {
           const tempClients = prev.clients;
           tempClients[clientIndex].answers[game.round] = "\n";
-          console.log(!!tempClients[clientIndex].answers[game.round]);
 
           return {
             ...prev,
             clients: tempClients,
           };
         });
-
-        [1, 2, 3, 4, 5, 1, 2, 3, 4, 5].forEach(() => {
-          setAnswersCards((prev) => {
-            return [
-              ...prev,
-              {
-                username: game.clients[clientIndex].username,
-                width: `${Math.floor(Math.random() * 81)}vw`,
-                height: `${Math.floor(Math.random() * 56) + 22.5}vh`,
-                rotation: `${Math.floor(Math.random() * 180) - 90}deg`,
-                color: "#" + Math.floor(Math.random() * 16777215).toString(16),
-              },
-            ];
+        
+        setAnswersCards((prev) => {
+          prev.push({
+            id: game.clients[clientIndex].id,
+            username: game.clients[clientIndex].username,
+            width: `${Math.floor(Math.random() * 81)}vw`,
+            height: `${Math.floor(Math.random() * 56) + 22.5}vh`,
+            rotation: `${Math.floor(Math.random() * 180) - 90}deg`,
+            color: "#" + Math.floor(Math.random() * 16777215).toString(16),
           });
+          return prev;
         });
       } else if (response.method === "finishRound") {
         setGame((prev) => {
@@ -244,71 +236,10 @@ export default function GamePage() {
         gap={14}
         minHeight="90vh"
       >
-        {game.state === "onRoundFeedback" && ( // map respostas de jogadores
+        {(game.state === "onRoundFeedback" || game.state === "onRound") && ( // map respostas de jogadores
           <Grid container position="absolute">
             {answersCards.map((asnwerCard) => {
-              return (
-                <Grid
-                  justifyContent="center"
-                  alignItems="center"
-                  position="fixed"
-                  left={asnwerCard.width}
-                  top={asnwerCard.height}
-                  minWidth={"20vw"}
-                  minHeight={"10vh"}
-                  flexDirection="row"
-                  border={2}
-                  sx={{
-                    backgroundColor: 'rgba(256,256,256,0.95)',
-                    rotate: asnwerCard.rotation,
-                  }}
-                >
-                  <Grid
-                    item
-                    position="relative"
-                    top={7.5}
-                    xs={12}
-                    sx={{
-                      textAlign: "center",
-                    }}
-                  >
-                    <Typography
-                      variant="overline"
-                      display="inline"
-                      width="100%"
-                      fontSize={20}
-                    >
-                      {asnwerCard.username}
-                    </Typography>
-                  </Grid>
-                  <Grid
-                    position="absolute"
-                    top={1}
-                    right={1}
-                    minHeight="100%"
-                    item
-                    xs={1}
-                    justifyContent="space-between"
-                  >
-                    <Iconify
-                      icon="fluent-mdl2:like-solid"
-                      width="24px"
-                      color="green"
-                      position="fixed"
-                      top={7}
-                      right={7}
-                    />
-                    <Iconify
-                      icon="fluent-mdl2:dislike-solid"
-                      width="24px"
-                      color="red"
-                      position="fixed"
-                      bottom={7}
-                      right={7}
-                    />
-                  </Grid>
-                </Grid>
-              );
+              return <PlayerAnswerCard answerCard={asnwerCard} />;
             })}
           </Grid>
         )}
@@ -471,6 +402,47 @@ export default function GamePage() {
                     onClick={handleAnswerRound}
                   >
                     Enviar resposta
+                  </Button>
+                </Grid>
+              </Grid>
+            )}
+
+            {game.clients.some((player) => {
+              return (
+                player.id === user?.id.slice(0, 4) &&
+                !!player.answers[game.round - 1]
+              );
+            }) && (
+              <Grid // Inserir resposta
+                item
+                container
+                xs={12}
+                md={8}
+                xl={5}
+                alignItems="center"
+                justifyContent="center"
+                gap={3}
+              >
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    label="Resposta"
+                    placeholder="Insira sua resposta..."
+                    onChange={(e) => {
+                      setAnswer(e.target.value);
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={9}>
+                  <Button
+                    fullWidth
+                    size="large"
+                    variant="contained"
+                    color="success"
+                    onClick={handleAnswerRound}
+                  >
+                    Enviar resposta 2
                   </Button>
                 </Grid>
               </Grid>

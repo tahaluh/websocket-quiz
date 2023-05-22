@@ -59,3 +59,12 @@ export interface Game {
   configs: QuizGameConfig;
   round: number;
 }
+
+export interface answerCard {
+  id: string;
+  username: string;
+  width: string;
+  height: string;
+  color: string;
+  rotation: string;
+}
