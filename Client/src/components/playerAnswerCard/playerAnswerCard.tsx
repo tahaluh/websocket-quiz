@@ -3,19 +3,36 @@ import { answerCard } from "../../@types/localEntity";
 import animations from "../../animations/animations";
 import Iconify from "../iconify";
 import { memo } from "react";
+import { useWebSocketContext } from "../../contexts/useWebSocketContext";
+import { useAuthContext } from "../../contexts/useUserContext";
+import { useGameContext } from "../../contexts/useGameContext";
 
 interface propsInterface {
   answerCard: answerCard;
 }
 
 const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
+  const { ws } = useWebSocketContext();
+  const { user } = useAuthContext();
+  const { game } = useGameContext();
+
+  const handleRevealAnswer = () => {
+    if (!ws) return;
+
+    if (user && game.hostId === user.id.slice(0, 4)) {
+      const payLoad = {
+        method: "revealAnswer",
+        clientId: user.id,
+        gameId: game.id,
+        asnwererId: game.clients[answerCard.clientIndex].id,
+      };
+
+      ws.send(JSON.stringify(payLoad));
+    }
+  };
+
   return (
-    <ButtonBase
-      onClick={() => {
-        console.log();
-      }}
-      key={answerCard.height}
-    >
+    <ButtonBase onClick={handleRevealAnswer} key={answerCard.clientIndex}>
       <Grid
         justifyContent="center"
         alignItems="center"
@@ -31,10 +48,7 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
             Math.floor(Math.random() * 5) + 10
           )} ${Math.floor(Math.random() * 5) + 10}s infinite ease-in-out;`,
           "&:hover": {
-            transform: "scale(1.2)",
             animationPlayState: "paused",
-            cursor: "pointer",
-            zIndex: "999",
           },
         }}
       >
@@ -44,6 +58,12 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
           border={2}
           sx={{
             animation: `${animations.entraceScaleUp} .2s 1 ease-in-out;`,
+            "&:hover": {
+              transform: "scale(1.1)",
+              animationPlayState: "paused",
+              cursor: "pointer",
+              zIndex: "999",
+            },
           }}
         >
           <Grid
@@ -61,7 +81,7 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
               width="100%"
               fontSize={20}
             >
-              {answerCard.username}
+              {game.clients[answerCard.clientIndex].username}
             </Typography>
           </Grid>
           <Grid

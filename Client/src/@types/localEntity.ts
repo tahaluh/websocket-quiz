@@ -61,10 +61,8 @@ export interface Game {
 }
 
 export interface answerCard {
-  id: string;
-  username: string;
+  clientIndex: number;
   width: string;
   height: string;
-  color: string;
   rotation: string;
 }

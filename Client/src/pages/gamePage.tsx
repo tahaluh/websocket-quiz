@@ -59,15 +59,13 @@ export default function GamePage() {
             clients: tempClients,
           };
         });
-        
+
         setAnswersCards((prev) => {
           prev.push({
-            id: game.clients[clientIndex].id,
-            username: game.clients[clientIndex].username,
+            clientIndex: clientIndex,
             width: `${Math.floor(Math.random() * 81)}vw`,
             height: `${Math.floor(Math.random() * 56) + 22.5}vh`,
             rotation: `${Math.floor(Math.random() * 180) - 90}deg`,
-            color: "#" + Math.floor(Math.random() * 16777215).toString(16),
           });
           return prev;
         });
@@ -402,47 +400,6 @@ export default function GamePage() {
                     onClick={handleAnswerRound}
                   >
                     Enviar resposta
-                  </Button>
-                </Grid>
-              </Grid>
-            )}
-
-            {game.clients.some((player) => {
-              return (
-                player.id === user?.id.slice(0, 4) &&
-                !!player.answers[game.round - 1]
-              );
-            }) && (
-              <Grid // Inserir resposta
-                item
-                container
-                xs={12}
-                md={8}
-                xl={5}
-                alignItems="center"
-                justifyContent="center"
-                gap={3}
-              >
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    variant="outlined"
-                    label="Resposta"
-                    placeholder="Insira sua resposta..."
-                    onChange={(e) => {
-                      setAnswer(e.target.value);
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={9}>
-                  <Button
-                    fullWidth
-                    size="large"
-                    variant="contained"
-                    color="success"
-                    onClick={handleAnswerRound}
-                  >
-                    Enviar resposta 2
                   </Button>
                 </Grid>
               </Grid>
