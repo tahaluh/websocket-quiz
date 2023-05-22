@@ -3,7 +3,7 @@ export interface Player {
   host: boolean;
   id: string;
   points: number[];
-  answers: string[];
+  answers: string[] | null[];
 }
 
 export interface JoinedRoomMessage {
@@ -39,6 +39,12 @@ export interface AnswerQuizGameMessage {
 
 export interface FinishRoundMessage {
   method: "finishRound";
+}
+
+export interface RevealAnswerMessage {
+  method: "revealAnswer";
+  clientIndex: number;
+  answer: string;
 }
 export interface QuizGameConfig {
   gameMode: "quizGame";

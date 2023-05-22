@@ -31,8 +31,14 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
     }
   };
 
+  const revealed =
+    !!game.clients[answerCard.clientIndex].answers[game.round - 1];
+
   return (
-    <ButtonBase onClick={handleRevealAnswer} key={answerCard.clientIndex}>
+    <ButtonBase
+      onClick={handleRevealAnswer}
+      key={game.clients[answerCard.clientIndex].id}
+    >
       <Grid
         justifyContent="center"
         alignItems="center"
@@ -43,10 +49,16 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
         sx={{
           backgroundColor: "rgba(256,256,256,0.95)",
           rotate: answerCard.rotation,
-          animation: `${animations.cardMoveRotate(
-            Math.floor(Math.random() * 25) + 10,
-            Math.floor(Math.random() * 5) + 10
-          )} ${Math.floor(Math.random() * 5) + 10}s infinite ease-in-out;`,
+          ...(!revealed
+            ? {
+                animation: `${animations.cardMoveRotate(
+                  Math.floor(Math.random() * 25) + 10,
+                  Math.floor(Math.random() * 5) + 10
+                )} ${
+                  Math.floor(Math.random() * 5) + 10
+                }s infinite ease-in-out;`,
+              }
+            : {}),
           "&:hover": {
             animationPlayState: "paused",
           },
@@ -81,7 +93,8 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
               width="100%"
               fontSize={20}
             >
-              {game.clients[answerCard.clientIndex].username}
+              {game.clients[answerCard.clientIndex].answers[game.round - 1] ||
+                game.clients[answerCard.clientIndex].username}
             </Typography>
           </Grid>
           <Grid

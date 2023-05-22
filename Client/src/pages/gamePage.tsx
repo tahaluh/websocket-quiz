@@ -16,9 +16,9 @@ import {
   AnswerQuizGameMessage,
   FinishRoundMessage,
   NextRoundMessage,
+  RevealAnswerMessage,
   answerCard,
 } from "../@types/localEntity";
-import animations from "../animations/animations";
 import PlayerAnswerCard from "../components/playerAnswerCard/playerAnswerCard";
 
 export default function GamePage() {
@@ -37,14 +37,15 @@ export default function GamePage() {
       const response:
         | NextRoundMessage
         | AnswerQuizGameMessage
-        | FinishRoundMessage = JSON.parse(message.data);
+        | FinishRoundMessage
+        | RevealAnswerMessage = JSON.parse(message.data);
+
+      console.log(message);
       if (response.method === "nextRound") {
         setGame((prev) => {
-          return {
-            ...prev,
-            state: "onRound",
-            round: prev.round + 1,
-          };
+          prev.state = "onRound";
+          prev.round = prev.round + 1;
+          return prev;
         });
         setCounter(game.configs.answerTime * 10);
       } else if (response.method === "answerQuizGame") {
@@ -52,7 +53,7 @@ export default function GamePage() {
 
         setGame((prev) => {
           const tempClients = prev.clients;
-          tempClients[clientIndex].answers[game.round] = "\n";
+          tempClients[clientIndex].answers[game.round] = null;
 
           return {
             ...prev,
@@ -61,17 +62,28 @@ export default function GamePage() {
         });
 
         setAnswersCards((prev) => {
-          prev.push({
-            clientIndex: clientIndex,
-            width: `${Math.floor(Math.random() * 81)}vw`,
-            height: `${Math.floor(Math.random() * 56) + 22.5}vh`,
-            rotation: `${Math.floor(Math.random() * 180) - 90}deg`,
-          });
+          if (!prev.find((client) => client.clientIndex == clientIndex)) {
+            prev.push({
+              clientIndex: clientIndex,
+              width: `${Math.floor(Math.random() * 81)}vw`,
+              height: `${Math.floor(Math.random() * 56) + 22.5}vh`,
+              rotation: `${Math.floor(Math.random() * 180) - 90}deg`,
+            });
+          }
           return prev;
         });
       } else if (response.method === "finishRound") {
         setGame((prev) => {
           return { ...prev, state: "onRoundFeedback" };
+        });
+      } else if (response.method === "revealAnswer") {
+        const clientIndex = response.clientIndex;
+        const revealedAnswer = response.answer;
+        setGame((prev) => {
+          let tempClients = [...prev.clients];
+          tempClients[clientIndex].answers[game.round - 1] = revealedAnswer;
+
+          return { ...prev, clients: tempClients };
         });
       }
     };
@@ -104,9 +116,7 @@ export default function GamePage() {
     ws.send(JSON.stringify(payLoad));
   };
 
-  useEffect(() => {
-    console.log(game.clients);
-  }, [game]);
+  useEffect(() => {}, [game]);
 
   // counter
 
@@ -252,6 +262,13 @@ export default function GamePage() {
             >
               <Grid item xs={8} md={5} justifyContent="center">
                 <Typography>Lista de Jogadores:</Typography>
+                <Button
+                  onClick={() => {
+                    console.log(game);
+                  }}
+                >
+                  a
+                </Button>
               </Grid>
               <Grid item container xs={8} md={4} direction="column">
                 {game.clients.map((player, index) => {
