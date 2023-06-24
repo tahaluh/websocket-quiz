@@ -368,21 +368,22 @@ wss.on("request", (request) => {
       if (result.method === "quizGameFeedback") {
         const clientId = result.clientId;
         const answererId = result.answererId;
-        const correct = result.correct;
+        const feedback = result.feedback;
         const gameId = result.gameId;
         const quizGame = games[gameId];
         const round = quizGame.round;
+        console.log(result);
 
         // verifica se o requerente e o host
         if (games[gameId].hostId != clientId) return;
 
         const answererIndex = games[gameId].clients.findIndex(
-          (client) => client.id === answererId
+          (player) => player.id.slice(0, 4) === answererId
         );
 
         if (answererIndex === -1) return;
 
-        games[gameId].clients[answererIndex].points[round - 1] = correct
+        games[gameId].clients[answererIndex].points[round - 1] = feedback
           ? 1
           : -1;
 
