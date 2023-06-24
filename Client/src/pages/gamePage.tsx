@@ -49,13 +49,13 @@ export default function GamePage() {
           return prev;
         });
         setCounter(game.configs.answerTime * 10);
+        setAnswersCards([]);
       } else if (response.method === "answerQuizGame") {
         const clientIndex = response.clientIndex;
 
         setGame((prev) => {
           const tempClients = prev.clients;
           tempClients[clientIndex].answers[game.round - 1] = null;
-          console.log(game.round);
 
           return {
             ...prev,
@@ -75,6 +75,7 @@ export default function GamePage() {
           return prev;
         });
       } else if (response.method === "finishRound") {
+        console.log("terminou o round");
         setGame((prev) => {
           return { ...prev, state: "onRoundFeedback" };
         });
@@ -98,7 +99,11 @@ export default function GamePage() {
         });
       }
     };
-  }, [game.hostId === user?.id.slice(0, 4)]);
+  }, [game.hostId === user?.id.slice(0, 4), game.round]);
+
+  useEffect(() => {
+    console.log(game);
+  }, [game]);
 
   // handle
 

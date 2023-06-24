@@ -19,6 +19,8 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
   const handleRevealAnswer = () => {
     if (!ws) return;
 
+    console.log(game.clients[answerCard.clientIndex]);
+
     if (user && game.hostId === user.id.slice(0, 4)) {
       const payLoad = {
         method: "revealAnswer",
