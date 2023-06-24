@@ -44,8 +44,6 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
       };
 
       ws.send(JSON.stringify(payLoad));
-
-      console.log("teste");
     }
   };
 

@@ -42,7 +42,6 @@ export default function GamePage() {
         | RevealAnswerMessage
         | QuizGameFeedbackMessage = JSON.parse(message.data);
 
-      console.log(message);
       if (response.method === "nextRound") {
         setGame((prev) => {
           prev.state = "onRound";
@@ -55,7 +54,8 @@ export default function GamePage() {
 
         setGame((prev) => {
           const tempClients = prev.clients;
-          tempClients[clientIndex].answers[game.round] = null;
+          tempClients[clientIndex].answers[game.round - 1] = null;
+          console.log(game.round);
 
           return {
             ...prev,
@@ -256,7 +256,13 @@ export default function GamePage() {
         minHeight="90vh"
       >
         {(game.state === "onRoundFeedback" || game.state === "onRound") && ( // map respostas de jogadores
-          <Grid container justifyContent={"center"}>
+          <Grid
+            container
+            item
+            justifyContent={"center"}
+            flexDirection={"column"}
+            alignItems={"center"}
+          >
             {answersCards.map((asnwerCard) => {
               return <PlayerAnswerCard answerCard={asnwerCard} />;
             })}
@@ -273,13 +279,6 @@ export default function GamePage() {
             >
               <Grid item xs={8} md={5} justifyContent="center">
                 <Typography>Lista de Jogadores:</Typography>
-                <Button
-                  onClick={() => {
-                    console.log(game);
-                  }}
-                >
-                  a
-                </Button>
               </Grid>
               <Grid item container xs={8} md={4} direction="column">
                 {game.clients.map((player, index) => {
@@ -392,10 +391,11 @@ export default function GamePage() {
                 {counter ? `${Math.ceil(counter / 10)}...` : "Zero!"}
               </Typography>
             </Grid>
+            {/* game.clients[clientIndex].answers[game.round] */}
             {!game.clients.some((player) => {
               return (
                 player.id === user?.id.slice(0, 4) &&
-                !!player.answers[game.round - 1]
+                player.answers[game.round - 1] === null
               );
             }) && (
               <Grid // Inserir resposta
