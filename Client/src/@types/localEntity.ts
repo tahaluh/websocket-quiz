@@ -46,6 +46,11 @@ export interface RevealAnswerMessage {
   clientIndex: number;
   answer: string;
 }
+export interface QuizGameFeedbackMessage {
+  method: "quizGameFeedback";
+  clientIndex: number;
+  result: boolean;
+}
 export interface QuizGameConfig {
   gameMode: "quizGame";
   rounds: number;

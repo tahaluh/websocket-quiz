@@ -389,7 +389,8 @@ wss.on("request", (request) => {
 
         const payLoad = {
           method: "quizGameFeedback",
-          clients: filterClients(games[gameId].clients, games[gameId].hostId),
+          result: feedback,
+          clientIndex: answererIndex,
         };
 
         // avisa pra todo mundo que o status do jogo mudou

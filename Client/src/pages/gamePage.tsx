@@ -16,6 +16,7 @@ import {
   AnswerQuizGameMessage,
   FinishRoundMessage,
   NextRoundMessage,
+  QuizGameFeedbackMessage,
   RevealAnswerMessage,
   answerCard,
 } from "../@types/localEntity";
@@ -38,7 +39,8 @@ export default function GamePage() {
         | NextRoundMessage
         | AnswerQuizGameMessage
         | FinishRoundMessage
-        | RevealAnswerMessage = JSON.parse(message.data);
+        | RevealAnswerMessage
+        | QuizGameFeedbackMessage = JSON.parse(message.data);
 
       console.log(message);
       if (response.method === "nextRound") {
@@ -82,6 +84,15 @@ export default function GamePage() {
         setGame((prev) => {
           let tempClients = [...prev.clients];
           tempClients[clientIndex].answers[game.round - 1] = revealedAnswer;
+
+          return { ...prev, clients: tempClients };
+        });
+      } else if (response.method === "quizGameFeedback") {
+        const clientIndex = response.clientIndex;
+        const result = response.result;
+        setGame((prev) => {
+          let tempClients = [...prev.clients];
+          tempClients[clientIndex].points[game.round - 1] = result ? 1 : -1;
 
           return { ...prev, clients: tempClients };
         });

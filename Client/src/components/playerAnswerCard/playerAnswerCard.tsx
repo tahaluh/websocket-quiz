@@ -31,8 +31,29 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
     }
   };
 
+  const handleQuizGameFeedback = (feedback: boolean) => {
+    if (!ws) return;
+
+    if (user && game.hostId === user.id.slice(0, 4)) {
+      const payLoad = {
+        method: "quizGameFeedback",
+        clientId: user.id,
+        gameId: game.id,
+        feedback: feedback,
+        answererId: game.clients[answerCard.clientIndex].id,
+      };
+
+      ws.send(JSON.stringify(payLoad));
+
+      console.log("teste");
+    }
+  };
+
   const revealed =
     !!game.clients[answerCard.clientIndex].answers[game.round - 1];
+
+  const roundPoints =
+    game.clients[answerCard.clientIndex].points[game.round - 1];
 
   return (
     <Box
@@ -103,7 +124,7 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
               : {}),
           }}
         >
-          {revealed && (
+          {revealed && roundPoints && (
             <Grid
               item
               xs={1.5}
@@ -118,7 +139,7 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
             >
               <Iconify
                 width="24px"
-                {...(true
+                {...(roundPoints > 0
                   ? {
                       icon: "material-symbols:check",
                       color: "green",
@@ -164,9 +185,13 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
               : {})}
           >
             <Iconify
-              onClick={() => {
-                console.log("Like");
-              }}
+              {...(revealed
+                ? {
+                    onClick: () => {
+                      handleQuizGameFeedback(true);
+                    },
+                  }
+                : {})}
               icon="fluent-mdl2:like-solid"
               width="24px"
               color="green"
@@ -189,9 +214,13 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
               }}
             />
             <Iconify
-              onClick={() => {
-                console.log("Deslike");
-              }}
+              {...(revealed
+                ? {
+                    onClick: () => {
+                      handleQuizGameFeedback(false);
+                    },
+                  }
+                : {})}
               icon="fluent-mdl2:dislike-solid"
               width="24px"
               color="red"
