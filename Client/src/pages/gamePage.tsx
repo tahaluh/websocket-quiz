@@ -245,7 +245,7 @@ export default function GamePage() {
         minHeight="90vh"
       >
         {(game.state === "onRoundFeedback" || game.state === "onRound") && ( // map respostas de jogadores
-          <Grid container position="absolute">
+          <Grid container justifyContent={"center"}>
             {answersCards.map((asnwerCard) => {
               return <PlayerAnswerCard answerCard={asnwerCard} />;
             })}

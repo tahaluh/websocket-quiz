@@ -35,22 +35,37 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
     !!game.clients[answerCard.clientIndex].answers[game.round - 1];
 
   return (
-    <ButtonBase
-      onClick={handleRevealAnswer}
+    <Box
+      {...(!revealed
+        ? {
+            onClick: () => {
+              handleRevealAnswer();
+            },
+          }
+        : {})}
       key={game.clients[answerCard.clientIndex].id}
+      sx={{
+        "&:hover": {
+          cursor: "normal",
+        },
+      }}
     >
       <Grid
         justifyContent="center"
         alignItems="center"
-        position="fixed"
-        left={answerCard.width}
-        top={answerCard.height}
         flexDirection="row"
+        {...(!revealed
+          ? {
+              position: "fixed",
+              left: answerCard.width,
+              top: answerCard.height,
+            }
+          : {})}
         sx={{
           backgroundColor: "rgba(256,256,256,0.95)",
-          rotate: answerCard.rotation,
           ...(!revealed
             ? {
+                rotate: answerCard.rotation,
                 animation: `${animations.cardMoveRotate(
                   Math.floor(Math.random() * 25) + 10,
                   Math.floor(Math.random() * 5) + 10
@@ -65,19 +80,53 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
         }}
       >
         <Box
-          minWidth={"20vw"}
-          minHeight={"10vh"}
           border={2}
+          display={"flex"}
+          {...(!revealed
+            ? {
+                minWidth: "20vw",
+                minHeight: "10vh",
+              }
+            : { minWidth: "40vw", minHeight: "10vh" })}
           sx={{
             animation: `${animations.entraceScaleUp} .2s 1 ease-in-out;`,
-            "&:hover": {
-              transform: "scale(1.1)",
-              animationPlayState: "paused",
-              cursor: "pointer",
-              zIndex: "999",
-            },
+            ...(!revealed
+              ? {
+                  zIndex: "998",
+                  "&:hover": {
+                    transform: "scale(1.1)",
+                    animationPlayState: "paused",
+                    cursor: "pointer",
+                    zIndex: "999",
+                  },
+                }
+              : {}),
           }}
         >
+          {revealed && (
+            <Grid
+              item
+              xs={1.5}
+              border={2}
+              borderTop={0}
+              borderLeft={0}
+              height={30}
+              position="static"
+              sx={{
+                textAlign: "center",
+              }}
+            >
+              <Iconify
+                width="24px"
+                {...(true
+                  ? {
+                      icon: "material-symbols:check",
+                      color: "green",
+                    }
+                  : { icon: "heroicons-solid:x", color: "red" })}
+              />
+            </Grid>
+          )}
           <Grid
             item
             position="relative"
@@ -98,34 +147,76 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
             </Typography>
           </Grid>
           <Grid
-            position="absolute"
-            top={1}
-            right={1}
             minHeight="100%"
+            container
             item
-            xs={1}
+            xs={2}
+            padding={1}
             justifyContent="space-between"
+            alignItems="flex-end"
+            flexDirection={"column"}
+            {...(!revealed
+              ? {
+                  position: "absolute",
+                  right: 1,
+                  top: 1,
+                }
+              : {})}
           >
             <Iconify
+              onClick={() => {
+                console.log("Like");
+              }}
               icon="fluent-mdl2:like-solid"
               width="24px"
               color="green"
-              position="fixed"
-              top={7}
-              right={7}
+              {...(!revealed
+                ? {
+                    position: "fixed",
+                    right: 7,
+                    top: 7,
+                  }
+                : {})}
+              sx={{
+                ...(!revealed
+                  ? {}
+                  : {
+                      "&:hover": {
+                        transform: "scale(1.2)",
+                        cursor: "pointer",
+                      },
+                    }),
+              }}
             />
             <Iconify
+              onClick={() => {
+                console.log("Deslike");
+              }}
               icon="fluent-mdl2:dislike-solid"
               width="24px"
               color="red"
-              position="fixed"
-              bottom={7}
-              right={7}
+              {...(!revealed
+                ? {
+                    position: "fixed",
+                    right: 7,
+                    bottom: 7,
+                  }
+                : {})}
+              sx={{
+                ...(!revealed
+                  ? {}
+                  : {
+                      "&:hover": {
+                        transform: "scale(1.2)",
+                        cursor: "pointer",
+                      },
+                    }),
+              }}
             />
           </Grid>
         </Box>
       </Grid>
-    </ButtonBase>
+    </Box>
   );
 };
 
