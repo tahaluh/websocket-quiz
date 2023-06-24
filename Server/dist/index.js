@@ -264,7 +264,6 @@ wss.on("request", (request) => {
                 const gameId = result.gameId;
                 const quizGame = games[gameId];
                 const round = quizGame.round;
-                console.log(result);
                 // verifica se o requerente e o host
                 if (games[gameId].hostId != clientId)
                     return;

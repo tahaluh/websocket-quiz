@@ -51,6 +51,11 @@ export interface QuizGameFeedbackMessage {
   clientIndex: number;
   result: boolean;
 }
+
+export interface FinishGameMessage {
+  method: "finishGame";
+  game: Game;
+}
 export interface QuizGameConfig {
   gameMode: "quizGame";
   rounds: number;

@@ -6,6 +6,7 @@ import { memo } from "react";
 import { useWebSocketContext } from "../../contexts/useWebSocketContext";
 import { useAuthContext } from "../../contexts/useUserContext";
 import { useGameContext } from "../../contexts/useGameContext";
+import universalTransition from "../../animations/transition";
 
 interface propsInterface {
   answerCard: answerCard;
@@ -75,17 +76,14 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
         justifyContent="center"
         alignItems="center"
         flexDirection="row"
-        {...(!revealed
-          ? {
-              position: "fixed",
-              left: answerCard.width,
-              top: answerCard.height,
-            }
-          : {})}
+        position="relative"
         sx={{
+          transition: universalTransition,
           backgroundColor: "rgba(256,256,256,0.95)",
           ...(!revealed
             ? {
+                top: answerCard.height,
+                left: answerCard.width,
                 rotate: answerCard.rotation,
                 animation: `${animations.cardMoveRotate(
                   Math.floor(Math.random() * 25) + 10,
@@ -94,7 +92,7 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
                   Math.floor(Math.random() * 5) + 10
                 }s infinite ease-in-out;`,
               }
-            : {}),
+            : { top: 0, left: 0 }),
           "&:hover": {
             animationPlayState: "paused",
           },
@@ -124,29 +122,54 @@ const PlayerAnswerCard = ({ answerCard }: propsInterface) => {
               : {}),
           }}
         >
-          {revealed && roundPoints && (
-            <Grid
-              item
-              xs={1.5}
-              border={2}
-              borderTop={0}
-              borderLeft={0}
-              height={30}
-              position="static"
-              sx={{
-                textAlign: "center",
-              }}
-            >
-              <Iconify
-                width="24px"
-                {...(roundPoints > 0
-                  ? {
-                      icon: "material-symbols:check",
-                      color: "green",
-                    }
-                  : { icon: "heroicons-solid:x", color: "red" })}
-              />
-            </Grid>
+          {revealed && (
+            <>
+              <Grid
+                item
+                xs={1.5}
+                border={2}
+                borderTop={0}
+                borderLeft={0}
+                height={30}
+                position="static"
+                sx={{
+                  textAlign: "center",
+                }}
+              >
+                <Iconify
+                  width="24px"
+                  {...(roundPoints > 0
+                    ? {
+                        icon: "material-symbols:check",
+                        color: "green",
+                      }
+                    : roundPoints < 0
+                    ? { icon: "heroicons-solid:x", color: "red" }
+                    : { icon: "" })}
+                />
+              </Grid>
+              {/* <Grid
+                item
+                margin={"auto"}
+                xs={6}
+                border={2}
+                borderTop={0}
+                height={30}
+                position="static"
+                sx={{
+                  textAlign: "center",
+                }}
+              >
+                <Typography
+                  variant="overline"
+                  display="inline"
+                  width="100%"
+                  fontSize={10}
+                >
+                  {game.clients[answerCard.clientIndex].username}
+                </Typography>
+              </Grid> */}
+            </>
           )}
           <Grid
             item

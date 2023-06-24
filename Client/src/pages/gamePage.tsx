@@ -14,6 +14,7 @@ import { useGameContext } from "../contexts/useGameContext";
 import { useEffect, useState } from "react";
 import {
   AnswerQuizGameMessage,
+  FinishGameMessage,
   FinishRoundMessage,
   NextRoundMessage,
   QuizGameFeedbackMessage,
@@ -21,11 +22,15 @@ import {
   answerCard,
 } from "../@types/localEntity";
 import PlayerAnswerCard from "../components/playerAnswerCard/playerAnswerCard";
+import { useNavigate } from "react-router-dom";
+import { PATH_GAME } from "../routes/paths";
+import universalTransition from "../animations/transition";
 
 export default function GamePage() {
   const { ws } = useWebSocketContext();
   const { user } = useAuthContext();
   const { game, setGame } = useGameContext();
+  const navigate = useNavigate();
   const [answersCards, setAnswersCards] = useState<answerCard[]>([]);
 
   const [answer, setAnswer] = useState<string>("");
@@ -40,7 +45,8 @@ export default function GamePage() {
         | AnswerQuizGameMessage
         | FinishRoundMessage
         | RevealAnswerMessage
-        | QuizGameFeedbackMessage = JSON.parse(message.data);
+        | QuizGameFeedbackMessage
+        | FinishGameMessage = JSON.parse(message.data);
 
       if (response.method === "nextRound") {
         setGame((prev) => {
@@ -67,8 +73,10 @@ export default function GamePage() {
           if (!prev.find((client) => client.clientIndex == clientIndex)) {
             prev.push({
               clientIndex: clientIndex,
-              width: `${Math.floor(Math.random() * 81)}vw`,
-              height: `${Math.floor(Math.random() * 56) + 22.5}vh`,
+              width: `${Math.floor(Math.random() * 38 * 2) - 38}vw`,
+              height: `${
+                Math.floor(Math.random() * 40 * 2) - 40 - prev.length * 10
+              }vh`,
               rotation: `${Math.floor(Math.random() * 180) - 90}deg`,
             });
           }
@@ -97,6 +105,12 @@ export default function GamePage() {
 
           return { ...prev, clients: tempClients };
         });
+      } else if (response.method === "finishGame") {
+        const resetGame = response.game;
+        setGame((prev) => {
+          return resetGame;
+        });
+        navigate(PATH_GAME.roomLobby(game.id || ""));
       }
     };
   }, [game.hostId === user?.id.slice(0, 4), game.round]);
@@ -124,7 +138,7 @@ export default function GamePage() {
     if (!ws) return;
 
     const payLoad = {
-      method: "nextRound",
+      method: game.round < game.configs.rounds ? "nextRound" : "finishGame",
       clientId: user ? user.id : "",
       gameId: game.id,
     };
@@ -254,17 +268,20 @@ export default function GamePage() {
 
       <Grid // container principal
         container
+        marginTop={9}
         flexDirection="column"
-        justifyContent="center"
         alignItems="center"
-        gap={14}
-        minHeight="90vh"
+        gap={12}
+        sx={{
+          transition: universalTransition,
+        }}
       >
         {
           // caso o jogo não esteja em round
           <>
             {(game.state === "onInterval" ||
-              game.state === "onRoundFeedback") && (
+              game.state === "onRoundFeedback" ||
+              game.state === "onRound") && (
               <Grid // lista de jogadores
                 container
                 flexDirection="column"
@@ -338,6 +355,7 @@ export default function GamePage() {
                 justifyContent={"center"}
                 flexDirection={"column"}
                 alignItems={"center"}
+                sx={{ transition: universalTransition }}
               >
                 {answersCards.map((asnwerCard) => {
                   return <PlayerAnswerCard answerCard={asnwerCard} />;
@@ -377,8 +395,10 @@ export default function GamePage() {
                   {game.hostId === user?.id.slice(0, 4) ? (
                     game.state === "onInterval" ? (
                       "Iniciar Round"
-                    ) : (
+                    ) : game.round < game.configs.rounds ? (
                       "Próximo Round"
+                    ) : (
+                      "Finalizar Partida"
                     )
                   ) : (
                     <>
@@ -397,12 +417,22 @@ export default function GamePage() {
             )}
           </>
         }
-        {game.state === "onRound" && ( // caso o jogo esteja em round
-          <>
+      </Grid>
+      {game.state === "onRound" && ( // caso o jogo esteja em round
+        <>
+          <Grid
+            container
+            position="fixed"
+            sx={{ top: "30vh" }}
+            alignContent={"center"}
+            justifyContent={"center"}
+            gap={10}
+          >
             <Grid // Timer
               item
-              xs={8}
+              container
               alignItems="center"
+              justifyContent={"center"}
             >
               <Typography
                 variant="h1"
@@ -453,9 +483,9 @@ export default function GamePage() {
                 </Grid>
               </Grid>
             )}
-          </>
-        )}
-      </Grid>
+          </Grid>
+        </>
+      )}
     </>
   );
 }
